@@ -1,14 +1,68 @@
-services:
-  stats-server:
-    ports:
-      - "9090:9090"
+version: '3.8'
 
+services:
   stats-db:
     image: postgres:16.1
-
-  ewm-service:
+    container_name: stats-db
+    environment:
+      POSTGRES_DB: stats
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
     ports:
-      - "8080:8080"
+      - "5433:5432"
+    volumes:
+      - stats_db_data:/var/lib/postgresql/data
+    networks:
+      - app-network
+
+  stats-service:
+    build: ./stats-service
+    container_name: stats-service
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://stats-db:5432/stats
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: password
+      SERVER_PORT: 9090
+    ports:
+      - "9090:9090"
+    depends_on:
+      - stats-db
+    networks:
+      - app-network
 
   ewm-db:
     image: postgres:16.1
+    container_name: ewm-db
+    environment:
+      POSTGRES_DB: ewm
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+    volumes:
+      - ewm_db_data:/var/lib/postgresql/data
+    networks:
+      - app-network
+
+  # Заготовка для сервиса
+  # main-service:
+  #   build: ./main-service
+  #   container_name: main-service
+  #   environment:
+  #     SPRING_DATASOURCE_URL: jdbc:postgresql://ewm-db:5432/ewm
+  #     STATS_SERVER_URL: http://stats-service:9090
+  #   ports:
+  #     - "8080:8080"
+  #   depends_on:
+  #     - ewm-db
+  #     - stats-service
+  #   networks:
+  #     - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  stats_db_data:
+  ewm_db_data:

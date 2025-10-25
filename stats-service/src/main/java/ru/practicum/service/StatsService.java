@@ -1,0 +1,64 @@
+package ru.practicum.service;
+
+import ru.practicum.EndpointHitRequest;
+import ru.practicum.model.EndpointHit;
+import ru.practicum.ViewStats;
+import ru.practicum.repository.StatsRepository;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+/**
+ * Сервисный слой для бизнес-логики работы со статистикой.
+ */
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class StatsService {
+
+    /**
+     * Репозиторий для работы с базой данных.
+     */
+    private final StatsRepository statsRepository;
+
+    /**
+     * Сохраняет информацию о посещении эндпоинта.
+     */
+    public EndpointHit saveHit(EndpointHitRequest hitRequest) {
+        EndpointHit hit = EndpointHit.builder()
+                .app(hitRequest.getApp())
+                .uri(hitRequest.getUri())
+                .ip(hitRequest.getIp())
+                .timestamp(hitRequest.getTimestamp())
+                .build();
+
+        EndpointHit savedHit = statsRepository.save(hit);
+        log.debug("Сохранена информация о посещении: app={}, uri={}, ip={}, timestamp={}",
+                savedHit.getApp(), savedHit.getUri(), savedHit.getIp(), savedHit.getTimestamp());
+        return savedHit;
+    }
+
+    /**
+     * Получает статистику по посещениям за указанный период.
+     */
+    public List<ViewStats> getStats(LocalDateTime start, LocalDateTime end,
+                                    List<String> uris, Boolean unique) {
+        log.debug("Запрос статистики: период с {} по {}, URIs: {}, уникальные: {}",
+                start, end, uris, unique);
+
+        List<ViewStats> stats;
+        if (Boolean.TRUE.equals(unique)) {
+            stats = statsRepository.getUniqueStats(start, end, uris);
+            log.debug("Получена статистика по уникальным посещениям: {} записей", stats.size());
+        } else {
+            stats = statsRepository.getStats(start, end, uris);
+            log.debug("Получена общая статистика: {} записей", stats.size());
+        }
+
+        log.debug("Найдено {} записей статистики за указанный период", stats.size());
+        return stats;
+    }
+}
