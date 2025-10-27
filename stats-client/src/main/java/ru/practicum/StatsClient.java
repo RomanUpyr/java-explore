@@ -1,7 +1,5 @@
 package ru.practicum;
 
-import ru.practicum.EndpointHitRequest;
-import ru.practicum.ViewStats;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.ParameterizedTypeReference;
@@ -14,6 +12,7 @@ import reactor.core.publisher.Mono;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+
 /**
  * HTTP-клиент для взаимодействия с сервисом статистики.
  */
@@ -41,7 +40,6 @@ public class StatsClient {
         log.debug("Отправка POST запроса на сохранение статистики: {}", hitRequest);
 
         try {
-            // Строим и выполняем POST запрос с WebClient
             webClient.post()
                     .uri(statsServiceUrl + "/hit")
                     .contentType(MediaType.APPLICATION_JSON)
@@ -92,7 +90,8 @@ public class StatsClient {
                                         "Ошибка сервиса статистики: " + clientResponse.statusCode()));
                             }
                     )
-                    .bodyToMono(new ParameterizedTypeReference<List<ViewStats>>() {})
+                    .bodyToMono(new ParameterizedTypeReference<List<ViewStats>>() {
+                    })
                     .doOnSuccess(response ->
                             log.debug("Успешно получено {} записей статистики", response.size()))
                     .doOnError(error ->
@@ -111,6 +110,7 @@ public class StatsClient {
 
     /**
      * Асинхронная версия метода получения статистики.
+     * Экспериментально сделал, потом можно будет убрать, если не потребуется
      */
     public Mono<List<ViewStats>> getStatsAsync(LocalDateTime start, LocalDateTime end,
                                                List<String> uris, Boolean unique) {
@@ -131,7 +131,8 @@ public class StatsClient {
                                     "Ошибка сервиса статистики: " + clientResponse.statusCode()));
                         }
                 )
-                .bodyToMono(new ParameterizedTypeReference<List<ViewStats>>() {})
+                .bodyToMono(new ParameterizedTypeReference<List<ViewStats>>() {
+                })
                 .doOnNext(stats ->
                         log.debug("Асинхронно получено {} записей", stats.size()))
                 .doOnError(error ->

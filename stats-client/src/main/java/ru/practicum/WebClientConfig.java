@@ -6,8 +6,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.reactive.function.client.WebClient;
 
-import ru.practicum.StatsClient;
-
 /**
  * Конфигурационный класс для настройки WebClient.
  */
@@ -34,7 +32,6 @@ public class WebClientConfig {
 
     /**
      * Создает и настраивает клиент для работы с сервисом статистики.
-
      */
     @Bean
     public StatsClient statsClient(WebClient webClient) {

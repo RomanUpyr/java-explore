@@ -9,6 +9,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
 import java.util.List;
+
 /**
  * Репозиторий для работы с сущностью EndpointHit.
  */
