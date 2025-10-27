@@ -27,6 +27,12 @@ services:
       - stats-db
     networks:
       - app-network
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:9090/actuator/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
 
   ewm-db:
     image: postgres:16.1
