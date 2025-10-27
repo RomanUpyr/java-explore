@@ -1,4 +1,4 @@
-package ru.practicum;
+package ru.practicum.controller;
 
 import org.springframework.web.bind.annotation.*;
 import java.util.*;
