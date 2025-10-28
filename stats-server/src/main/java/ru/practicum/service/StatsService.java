@@ -1,7 +1,6 @@
 package ru.practicum.service;
 
 import org.springframework.transaction.annotation.Transactional;
-import ru.practicum.EndpointHitRequest;
 import ru.practicum.model.EndpointHit;
 import ru.practicum.ViewStats;
 import ru.practicum.repository.StatsRepository;
