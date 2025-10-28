@@ -1,5 +1,6 @@
 package ru.practicum.service;
 
+import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.EndpointHitRequest;
 import ru.practicum.model.EndpointHit;
 import ru.practicum.ViewStats;
@@ -27,6 +28,7 @@ public class StatsService {
     /**
      * Сохраняет информацию о посещении эндпоинта.
      */
+    @Transactional
     public EndpointHit saveHit(EndpointHitRequest hitRequest) {
         EndpointHit hit = EndpointHit.builder()
                 .app(hitRequest.getApp())

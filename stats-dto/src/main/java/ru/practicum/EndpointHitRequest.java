@@ -1,6 +1,5 @@
 package ru.practicum;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -46,6 +45,5 @@ public class EndpointHitRequest {
      * Дата и время, когда был совершен запрос к эндпоинту.
      */
     @NotNull(message = "Timestamp cannot be null")
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime timestamp;
 }

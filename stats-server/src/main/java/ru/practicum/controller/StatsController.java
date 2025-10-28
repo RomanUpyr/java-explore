@@ -6,9 +6,7 @@ import ru.practicum.ViewStats;
 import ru.practicum.service.StatsService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
@@ -35,19 +33,21 @@ public class StatsController {
      * Обрабатывает запрос на сохранение информации о посещении эндпоинта.
      */
     @PostMapping("/hit")
-    public ResponseEntity<EndpointHit> hit(@Valid @RequestBody EndpointHitRequest hitRequest) {
+    @ResponseStatus(HttpStatus.CREATED)
+    public EndpointHit hit(@Valid @RequestBody EndpointHitRequest hitRequest) {
         log.debug("Получен POST /hit запрос: {}", hitRequest);
         EndpointHit savedHit = statsService.saveHit(hitRequest);
-        return new ResponseEntity<>(savedHit, HttpStatus.CREATED);
+        log.debug("Сохранена информация о посещении: {}", savedHit);
+        return savedHit;
     }
 
     /**
      * Обрабатывает запрос на получение статистики по посещениям.
      */
     @GetMapping("/stats")
-    public ResponseEntity<List<ViewStats>> getStats(
-            @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime start,
-            @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime end,
+    public List<ViewStats> getStats(
+            @RequestParam LocalDateTime start,
+            @RequestParam LocalDateTime end,
             @RequestParam(required = false) List<String> uris,
             @RequestParam(defaultValue = "false") Boolean unique) {
 
@@ -62,7 +62,8 @@ public class StatsController {
         }
 
         List<ViewStats> stats = statsService.getStats(start, end, uris, unique);
+        log.debug("Возвращено {} записей статистики", stats.size());
 
-        return new ResponseEntity<>(stats, HttpStatus.OK);
+        return stats;
     }
 }
