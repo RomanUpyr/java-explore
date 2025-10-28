@@ -29,18 +29,8 @@ public class StatsService {
      * Сохраняет информацию о посещении эндпоинта.
      */
     @Transactional
-    public EndpointHit saveHit(EndpointHitRequest hitRequest) {
-        EndpointHit hit = EndpointHit.builder()
-                .app(hitRequest.getApp())
-                .uri(hitRequest.getUri())
-                .ip(hitRequest.getIp())
-                .timestamp(hitRequest.getTimestamp())
-                .build();
-
-        EndpointHit savedHit = statsRepository.save(hit);
-        log.debug("Сохранена информация о посещении: app={}, uri={}, ip={}, timestamp={}",
-                savedHit.getApp(), savedHit.getUri(), savedHit.getIp(), savedHit.getTimestamp());
-        return savedHit;
+    public EndpointHit saveHit(EndpointHit hit) {
+        return statsRepository.save(hit);
     }
 
     /**

@@ -36,7 +36,19 @@ public class StatsController {
     @ResponseStatus(HttpStatus.CREATED)
     public EndpointHit hit(@Valid @RequestBody EndpointHitRequest hitRequest) {
         log.debug("Получен POST /hit запрос: {}", hitRequest);
-        EndpointHit savedHit = statsService.saveHit(hitRequest);
+
+        // Парсим timestamp из String в LocalDateTime
+        LocalDateTime timestamp = parseDateTime(hitRequest.getTimestamp());
+
+        // Создаем Entity
+        EndpointHit hit = EndpointHit.builder()
+                .app(hitRequest.getApp())
+                .uri(hitRequest.getUri())
+                .ip(hitRequest.getIp())
+                .timestamp(timestamp)
+                .build();
+
+        EndpointHit savedHit = statsService.saveHit(hit);
         log.debug("Сохранена информация о посещении: {}", savedHit);
         return savedHit;
     }

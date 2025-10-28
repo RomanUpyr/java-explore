@@ -1,6 +1,5 @@
 package ru.practicum;
 
-import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -8,7 +7,6 @@ import lombok.NoArgsConstructor;
 
 import jakarta.validation.constraints.NotBlank;
 
-import java.time.LocalDateTime;
 
 /**
  * DTO для запроса на сохранение информации о посещении эндпоинта.
@@ -44,7 +42,12 @@ public class EndpointHitRequest {
     /**
      * Дата и время, когда был совершен запрос к эндпоинту.
      */
-    @NotNull(message = "Timestamp cannot be null")
-    private LocalDateTime timestamp;
+
+    // Меняем на String
+    @NotBlank
+    private String timestamp;
+
+    //@NotNull(message = "Timestamp cannot be null")
+    //private LocalDateTime timestamp;
 
 }
