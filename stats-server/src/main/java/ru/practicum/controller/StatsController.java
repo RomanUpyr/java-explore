@@ -46,13 +46,17 @@ public class StatsController {
      */
     @GetMapping("/stats")
     public List<ViewStats> getStats(
-            @RequestParam LocalDateTime start,
-            @RequestParam LocalDateTime end,
+            // Парсим вручную из-за тестов
+            @RequestParam String start,
+            @RequestParam String end,
             @RequestParam(required = false) List<String> uris,
             @RequestParam(defaultValue = "false") Boolean unique) {
 
+        LocalDateTime startTime = parseDateTime(start);
+        LocalDateTime endTime = parseDateTime(end);
+
         log.debug("Получен GET /stats запрос: start={}, end={}, uris={}, unique={}",
-                start, end, uris, unique);
+                startTime, endTime, uris, unique);
 
         if (uris != null) {
             uris = uris.stream()
@@ -61,9 +65,14 @@ public class StatsController {
             log.debug("Декодированные URIs: {}", uris);
         }
 
-        List<ViewStats> stats = statsService.getStats(start, end, uris, unique);
+        List<ViewStats> stats = statsService.getStats(startTime, endTime, uris, unique);
         log.debug("Возвращено {} записей статистики", stats.size());
 
         return stats;
+    }
+
+    private LocalDateTime parseDateTime(String dateTimeStr) {
+        // Простая замена пробела на T для ISO формата
+        return LocalDateTime.parse(dateTimeStr.replace(" ", "T"));
     }
 }
