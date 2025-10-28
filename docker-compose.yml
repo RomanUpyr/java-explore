@@ -28,11 +28,11 @@ services:
     networks:
       - app-network
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:9090/actuator/health" ]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-      start_period: 30s
+      test: [ "CMD-SHELL", "timeout 1 bash -c 'cat < /dev/null > /dev/tcp/127.0.0.1/9090' || exit 1" ]
+      interval: 3s
+      timeout: 2s
+      retries: 20
+      start_period: 10s
 
   ewm-db:
     image: postgres:16.1
