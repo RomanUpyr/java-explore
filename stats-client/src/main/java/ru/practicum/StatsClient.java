@@ -108,37 +108,6 @@ public class StatsClient {
         }
     }
 
-    /**
-     * Асинхронная версия метода получения статистики.
-     * Экспериментально сделал, потом можно будет убрать, если не потребуется
-     */
-    public Mono<List<ViewStats>> getStatsAsync(LocalDateTime start, LocalDateTime end,
-                                               List<String> uris, Boolean unique) {
-
-        String url = buildStatsUrl(start, end, uris, unique);
-        log.debug("Асинхронный запрос статистики: {}", url);
-
-        return webClient.get()
-                .uri(url)
-                .accept(MediaType.APPLICATION_JSON)
-                .retrieve()
-                .onStatus(
-                        status -> status.is4xxClientError() || status.is5xxServerError(),
-                        clientResponse -> {
-                            log.warn("Ошибка HTTP {} при асинхронном запросе статистики",
-                                    clientResponse.statusCode());
-                            return Mono.error(new RuntimeException(
-                                    "Ошибка сервиса статистики: " + clientResponse.statusCode()));
-                        }
-                )
-                .bodyToMono(new ParameterizedTypeReference<List<ViewStats>>() {
-                })
-                .doOnNext(stats ->
-                        log.debug("Асинхронно получено {} записей", stats.size()))
-                .doOnError(error ->
-                        log.error("Ошибка в асинхронном запросе статистики: {}", error.getMessage()))
-                .onErrorReturn(List.of());
-    }
 
     /**
      * Строит URL для запроса статистики с параметрами.

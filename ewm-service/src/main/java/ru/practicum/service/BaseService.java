@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import ru.practicum.EndpointHitRequest;
 import ru.practicum.StatsClient;
 import ru.practicum.model.*;
 import ru.practicum.repository.*;
@@ -12,6 +13,7 @@ import ru.practicum.exception.*;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 
 /**
  * Базовый сервис с общими методами
@@ -54,6 +56,14 @@ public class BaseService {
     }
 
     /**
+     * Получает событие по ID и инициатору
+     */
+    public Event getEventByIdAndInitiatorId(Long eventId, Long userId) {
+        return eventRepository.findByIdAndInitiatorId(eventId, userId)
+                .orElseThrow(() -> new NotFoundException("Event with id=" + eventId + " was not found"));
+    }
+
+    /**
      * Создает объект пагинации
      */
     protected Pageable createPageRequest(int from, int size) {
@@ -73,4 +83,53 @@ public class BaseService {
     protected String formatDateTime(LocalDateTime dateTime) {
         return dateTime.format(FORMATTER);
     }
+
+
+    /**
+     * Отправляет статистику
+     */
+    public void sendStats(String clientIp, String uri) {
+        try {
+            EndpointHitRequest hitRequest = EndpointHitRequest.builder()
+                    .app("ewm-service")
+                    .uri(uri)
+                    .ip(clientIp)
+                    .timestamp(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
+                    .build();
+
+            statsClient.saveHit(hitRequest);
+            log.debug("Statistics sent for URI: {}, IP: {}", uri, clientIp);
+        } catch (Exception e) {
+            log.warn("Failed to send stats for uri: {}", uri, e);
+        }
+    }
+
+    /**
+     * Проверяет существование пользователя по email
+     */
+    public boolean userExistsByEmail(String email) {
+        return userRepository.existsByEmail(email);
+    }
+
+    /**
+     * Проверяет существование категории по имени
+     */
+    public boolean categoryExistsByName(String name) {
+        return categoryRepository.existsByName(name);
+    }
+
+    /**
+     * Проверяет существование заявки на участие
+     */
+    public boolean requestExistsByEventIdAndRequesterId(Long eventId, Long requesterId) {
+        return requestRepository.existsByEventIdAndRequesterId(eventId, requesterId);
+    }
+
+    /**
+     * Получает события по категории
+     */
+    public List<Event> getEventsByCategoryId(Long categoryId) {
+        return eventRepository.findByCategoryId(categoryId);
+    }
+
 }

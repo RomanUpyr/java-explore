@@ -1,15 +1,19 @@
 package ru.practicum.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
 import ru.practicum.model.*;
-import java.util.List;
-import java.util.Optional;
 
+/**
+ * Репозиторий для работы с пользователями системы.
+ */
 public interface UserRepository extends JpaRepository<User, Long> {
+    /**
+     * Проверяет существование пользователя с указанным email.
+     */
     boolean existsByEmail(String email);
+
+    /**
+     * Проверяет существование пользователя с указанным email, исключая пользователя с заданным ID.
+     */
     boolean existsByEmailAndIdNot(String email, Long id);
 }

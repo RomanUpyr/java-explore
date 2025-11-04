@@ -8,6 +8,7 @@ import ru.practicum.service.CompilationService;
 import ru.practicum.service.EventService;
 
 import jakarta.servlet.http.HttpServletRequest;
+
 import java.util.List;
 
 /**
@@ -21,7 +22,21 @@ public class PublicController {
     private final CategoryService categoryService;
     private final CompilationService compilationService;
 
-    // Events
+    /**
+     * Поиск и фильтрация событий для публичного доступа
+     *
+     * @param text          текст для поиска в аннотации и описании (опционально)
+     * @param categories    список ID категорий для фильтрации (опционально)
+     * @param paid          фильтр по платным/бесплатным событиям (опционально)
+     * @param rangeStart    начальная дата диапазона (опционально)
+     * @param rangeEnd      конечная дата диапазона (опционально)
+     * @param onlyAvailable только события с доступными местами (по умолчанию false)
+     * @param sort          тип сортировки (опционально)
+     * @param from          начальная позиция
+     * @param size          количество элементов на странице
+     * @param request       HTTP запрос для получения IP клиента
+     * @return список событий в кратком формате
+     */
     @GetMapping("/events")
     public List<EventShortDto> getEventsPublic(@RequestParam(required = false) String text,
                                                @RequestParam(required = false) List<Long> categories,
@@ -38,6 +53,13 @@ public class PublicController {
                 onlyAvailable, sort, from, size, clientIp);
     }
 
+    /**
+     * Получение полной информации о конкретном событии
+     *
+     * @param id      ID события
+     * @param request HTTP запрос для получения IP клиента
+     * @return событие с полной информацией
+     */
     @GetMapping("/events/{id}")
     public EventFullDto getEventPublic(@PathVariable Long id,
                                        HttpServletRequest request) {
@@ -45,19 +67,38 @@ public class PublicController {
         return eventService.getEventPublic(id, clientIp);
     }
 
-    // Categories
+    /**
+     * Получение списка категорий
+     *
+     * @param from начальная позиция
+     * @param size количество элементов на странице
+     * @return список категорий
+     */
     @GetMapping("/categories")
     public List<CategoryDto> getCategories(@RequestParam(defaultValue = "0") int from,
                                            @RequestParam(defaultValue = "10") int size) {
         return categoryService.getCategories(from, size);
     }
 
+    /**
+     * Получение информации о конкретной категории
+     *
+     * @param categoryId ID категории
+     * @return информация о категории
+     */
     @GetMapping("/categories/{categoryId}")
     public CategoryDto getCategory(@PathVariable Long categoryId) {
         return categoryService.getCategory(categoryId);
     }
 
-    // Compilations
+    /**
+     * Получение подборок событий
+     *
+     * @param pinned фильтр по закрепленным подборкам (опционально)
+     * @param from   начальная позиция
+     * @param size   количество элементов на странице
+     * @return список подборок
+     */
     @GetMapping("/compilations")
     public List<CompilationDto> getCompilations(@RequestParam(required = false) Boolean pinned,
                                                 @RequestParam(defaultValue = "0") int from,
@@ -65,11 +106,23 @@ public class PublicController {
         return compilationService.getCompilations(pinned, from, size);
     }
 
+    /**
+     * Получение информации о конкретной подборке
+     *
+     * @param compilationId ID подборки
+     * @return информация о подборке
+     */
     @GetMapping("/compilations/{compilationId}")
     public CompilationDto getCompilation(@PathVariable Long compilationId) {
         return compilationService.getCompilation(compilationId);
     }
 
+    /**
+     * Вспомогательный метод для получения реального IP адреса клиента
+     *
+     * @param request HTTP запрос
+     * @return IP адрес клиента
+     */
     private String getClientIp(HttpServletRequest request) {
         String xForwardedFor = request.getHeader("X-Forwarded-For");
         if (xForwardedFor != null && !xForwardedFor.isEmpty()) {
