@@ -1,6 +1,7 @@
 package ru.practicum.dto;
 
 import lombok.*;
+
 import java.util.List;
 
 /**
@@ -11,8 +12,8 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CompilationDto {
-    private Long id;
-    private List<EventShortDto> events;
-    private Boolean pinned;
-    private String title;
+    private Long id;                         // Уникальный идентификатор подборки
+    private List<EventShortDto> events;      // Список событий в подборке в кратком формате
+    private Boolean pinned;                  // Флаг закрепления подборки (отображается ли на главной странице)
+    private String title;                    // Заголовок подборки
 }

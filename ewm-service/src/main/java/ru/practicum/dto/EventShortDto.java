@@ -10,13 +10,13 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 public class EventShortDto {
-    private Long id;
-    private String annotation;
-    private CategoryDto category;
-    private Integer confirmedRequests;
-    private String eventDate;
-    private UserShortDto initiator;
-    private Boolean paid;
-    private String title;
-    private Long views;
+    private Long id;                       // Уникальный идентификатор события
+    private String annotation;             // Краткое описание события
+    private CategoryDto category;          // Категория события
+    private Integer confirmedRequests;     // Количество подтвержденных заявок
+    private String eventDate;              // Дата и время проведения события
+    private UserShortDto initiator;        // Организатор события
+    private Boolean paid;                  // Флаг платности события
+    private String title;                  // Заголовок события
+    private Long views;                    // Количество просмотров
 }

@@ -40,6 +40,7 @@ public class Event {
      * Количество подтвержденных заявок на участие.
      */
     @Column(name = "confirmed_requests")
+    @Builder.Default
     private Integer confirmedRequests = 0;
 
     /**
@@ -77,12 +78,14 @@ public class Event {
      * Флаг платности события (true - платное).
      */
     @Column(nullable = false)
+    @Builder.Default
     private Boolean paid = false;
 
     /**
      * Ограничение количества участников (0 - без ограничений).
      */
     @Column(name = "participant_limit")
+    @Builder.Default
     private Integer participantLimit = 0;
 
     /**
@@ -95,12 +98,14 @@ public class Event {
      * Требуется ли модерация заявок (true - требуется).
      */
     @Column(name = "request_moderation")
+    @Builder.Default
     private Boolean requestModeration = true;
 
     /**
      * Текущее состояние события.
      */
     @Enumerated(EnumType.STRING)
+    @Builder.Default
     private EventState state = EventState.PENDING;
 
     /**
@@ -111,5 +116,6 @@ public class Event {
 
     // рассчитывается на основе статистики, не сохраняется в БД
     @Transient
+    @Builder.Default
     private Long views = 0L;
 }

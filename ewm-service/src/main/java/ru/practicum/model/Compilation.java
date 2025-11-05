@@ -39,6 +39,7 @@ public class Compilation {
      * Флаг закрепления подборки.
      */
     @Column(nullable = false)
+    @Builder.Default
     private Boolean pinned = false;
 
     /**

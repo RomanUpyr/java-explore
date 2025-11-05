@@ -48,5 +48,6 @@ public class ParticipationRequest {
      * Текущий статус заявки.
      */
     @Enumerated(EnumType.STRING)
+    @Builder.Default
     private RequestStatus status = RequestStatus.PENDING;
 }

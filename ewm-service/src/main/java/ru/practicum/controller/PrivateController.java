@@ -1,6 +1,7 @@
 package ru.practicum.controller;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.dto.*;
@@ -14,6 +15,7 @@ import java.util.List;
 /**
  * Приватный API для авторизованных пользователей
  */
+@Slf4j
 @RestController
 @RequestMapping("/users")
 @RequiredArgsConstructor
@@ -47,6 +49,9 @@ public class PrivateController {
     @ResponseStatus(HttpStatus.CREATED)
     public EventFullDto createEvent(@PathVariable Long userId,
                                     @Valid @RequestBody NewEventDto newEventDto) {
+        log.debug("CONTROLLER: Received NewEventDto - annotation: '{}', title: '{}'",
+                newEventDto.getAnnotation(), newEventDto.getTitle());
+
         return eventService.createEvent(userId, newEventDto);
     }
 

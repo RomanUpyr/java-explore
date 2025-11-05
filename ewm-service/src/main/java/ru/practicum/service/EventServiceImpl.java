@@ -154,8 +154,12 @@ public class EventServiceImpl implements EventService {
         log.debug("Updating event id={} by admin: {}", eventId, updateRequest);
 
         Event event = baseService.getEventById(eventId);
-
+        log.debug("Event BEFORE update - Annotation: '{}', Title: '{}'",
+                event.getAnnotation(), event.getTitle());
         updateEventFields(event, updateRequest);
+
+        log.debug("Event AFTER update fields - Annotation: '{}', Title: '{}'",
+                event.getAnnotation(), event.getTitle());
 
         // Обработка изменения состояния администратором
         if (updateRequest.getStateAction() != null) {
@@ -180,6 +184,8 @@ public class EventServiceImpl implements EventService {
         }
 
         Event updatedEvent = eventRepository.save(event);
+        log.debug("Event FINAL state - Annotation: '{}', Title: '{}'",
+                updatedEvent.getAnnotation(), updatedEvent.getTitle());
         return convertToFullDto(updatedEvent);
     }
 

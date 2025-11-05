@@ -1,6 +1,7 @@
 package ru.practicum.controller;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.dto.*;
@@ -13,6 +14,7 @@ import java.util.List;
 /**
  * API для администраторов
  */
+@Slf4j
 @RestController
 @RequestMapping("/admin")
 @RequiredArgsConstructor
@@ -129,7 +131,9 @@ public class AdminController {
     @PatchMapping("/events/{eventId}")
     public EventFullDto updateEventByAdmin(@PathVariable Long eventId,
                                            @Valid @RequestBody UpdateEventAdminRequest updateRequest) {
-        return eventService.updateEventByAdmin(eventId, updateRequest);
+        EventFullDto result = eventService.updateEventByAdmin(eventId, updateRequest);
+        log.debug("CONTROLLER RESPONSE: Event id={}, annotation='{}'", result.getId(), result.getAnnotation());
+        return result;
     }
 
     /**
