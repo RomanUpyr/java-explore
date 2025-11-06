@@ -291,7 +291,8 @@ public class EventServiceImpl implements EventService {
         List<Event> events = eventRepository.findAll(spec, baseService.createPageRequest(from, size)).getContent();
 
         events.forEach(event -> {
-            event.setViews(event.getViews() + 1);
+            event.setViews(event.getViews());
+
         });
         List<Event> updatedEvents = eventRepository.saveAll(events);
         log.debug("Increased views for {} events", updatedEvents.size());
@@ -326,7 +327,7 @@ public class EventServiceImpl implements EventService {
             throw new NotFoundException("Event with id=" + eventId + " was not found");
         }
 
-        event.setViews(event.getViews() + 1);
+        event.setViews(event.getViews());
         Event updatedEvent = eventRepository.save(event);
         log.debug("Event id={} views increased to {}", eventId, updatedEvent.getViews());
 

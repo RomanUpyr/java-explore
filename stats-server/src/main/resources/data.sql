@@ -1,5 +1,6 @@
--- Очистка таблицы
 DELETE FROM endpoint_hits;
+
+ALTER TABLE endpoint_hits ALTER COLUMN id RESTART WITH 1;
 
 -- Тестовые данные для статистики
 INSERT INTO endpoint_hits (app, uri, ip, timestamp) VALUES
