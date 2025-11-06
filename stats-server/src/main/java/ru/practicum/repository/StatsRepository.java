@@ -1,7 +1,6 @@
 package ru.practicum.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Modifying;
 import ru.practicum.model.EndpointHit;
 import ru.practicum.ViewStats;
 import org.springframework.data.jpa.repository.Query;
