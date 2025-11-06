@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.dto.*;
+import ru.practicum.exception.BadRequestException;
 import ru.practicum.service.EventService;
 import ru.practicum.service.RequestService;
 
@@ -104,7 +105,10 @@ public class PrivateController {
     @PostMapping("/{userId}/requests")
     @ResponseStatus(HttpStatus.CREATED)
     public ParticipationRequestDto createRequest(@PathVariable Long userId,
-                                                 @RequestParam Long eventId) {
+                                                 @RequestParam(required = false) Long eventId) {
+        if (eventId == null) {
+            throw new BadRequestException("Event ID is required");
+        }
         return requestService.createRequest(userId, eventId);
     }
 

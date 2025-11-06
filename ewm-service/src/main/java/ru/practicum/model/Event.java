@@ -82,7 +82,7 @@ public class Event {
     private Boolean paid = false;
 
     /**
-     * Ограничение количества участников (0 - без ограничений).
+     * Ограничение количества участников.
      */
     @Column(name = "participant_limit")
     @Builder.Default
@@ -95,7 +95,7 @@ public class Event {
     private LocalDateTime publishedOn;
 
     /**
-     * Требуется ли модерация заявок (true - требуется).
+     * Требуется ли модерация заявок.
      */
     @Column(name = "request_moderation")
     @Builder.Default

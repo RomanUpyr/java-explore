@@ -108,6 +108,7 @@ public class CompilationServiceImpl implements CompilationService {
      * Обновление подборки
      */
     @Override
+    @Transactional
     public CompilationDto updateCompilation(Long compilationId, UpdateCompilationRequest updateRequest) {
         log.debug("Updating compilation id={}: {}", compilationId, updateRequest);
 

@@ -1,5 +1,6 @@
 package ru.practicum.dto;
 
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 import ru.practicum.model.Location;
@@ -24,6 +25,7 @@ public class UpdateEventUserRequest {
     private String eventDate;                 // Новая дата события
     private Location location;                // Новое местоположение
     private Boolean paid;                     // Новый флаг платности
+    @Min(0)
     private Integer participantLimit;         // Новый лимит участников
     private Boolean requestModeration;        // Новый флаг модерации
     private UserStateAction stateAction;      // Действие пользователя над событием (SEND_TO_REVIEW - отправить на модерацию, CANCEL_REVIEW - отменить отправку)

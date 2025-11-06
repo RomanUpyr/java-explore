@@ -2,6 +2,7 @@ package ru.practicum.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.dto.*;
@@ -33,7 +34,7 @@ public class EventServiceImpl implements EventService {
     public List<EventShortDto> getEventsByUser(Long userId, int from, int size) {
         log.debug("Getting events for user id={}, from={}, size={}", userId, from, size);
 
-        baseService.getUserById(userId); // Проверяем существование пользователя
+        baseService.getUserById(userId);
 
         return eventRepository.findByInitiatorId(userId, baseService.createPageRequest(from, size))
                 .stream()
@@ -52,7 +53,6 @@ public class EventServiceImpl implements EventService {
         User user = baseService.getUserById(userId);
         Category category = baseService.getCategoryById(newEventDto.getCategory());
 
-        // Проверяем, что дата события не раньше чем через 2 часа от текущего момента
         LocalDateTime eventDate = baseService.parseDateTime(newEventDto.getEventDate());
         if (eventDate.isBefore(LocalDateTime.now().plusHours(2))) {
             throw new BadRequestException("Event date must be at least 2 hours from now");
@@ -108,14 +108,12 @@ public class EventServiceImpl implements EventService {
         Event event = eventRepository.findByIdAndInitiatorId(eventId, userId)
                 .orElseThrow(() -> new NotFoundException("Event with id=" + eventId + " was not found"));
 
-        // Можно обновлять только события в состоянии PENDING или CANCELED
         if (event.getState() != EventState.PENDING && event.getState() != EventState.CANCELED) {
             throw new ConflictException("Only pending or canceled events can be changed");
         }
 
         updateEventFieldsUser(event, updateRequest);
 
-        // Обработка изменения состояния
         if (updateRequest.getStateAction() != null) {
             switch (updateRequest.getStateAction()) {
                 case SEND_TO_REVIEW:
@@ -138,10 +136,54 @@ public class EventServiceImpl implements EventService {
     public List<EventFullDto> getEventsForAdmin(List<Long> users, List<String> states,
                                                 List<Long> categories, String rangeStart,
                                                 String rangeEnd, int from, int size) {
-        log.debug("Getting events for admin: users={}, states={}, categories={}", users, states, categories);
+        log.debug("Getting events for admin: users={}, states={}, categories={}, rangeStart={}, rangeEnd={}",
+                users, states, categories, rangeStart, rangeEnd);
 
-        return eventRepository.findAll(baseService.createPageRequest(from, size))
-                .stream()
+        LocalDateTime startDateTime = null;
+        LocalDateTime endDateTime = null;
+
+        if (rangeStart != null) {
+            startDateTime = baseService.parseDateTime(rangeStart);
+        }
+        if (rangeEnd != null) {
+            endDateTime = baseService.parseDateTime(rangeEnd);
+        }
+
+        if (startDateTime != null && endDateTime != null && endDateTime.isBefore(startDateTime)) {
+            throw new BadRequestException("Range end cannot be before range start");
+        }
+        Specification<Event> spec = Specification.where(null);
+
+        if (users != null && !users.isEmpty()) {
+            spec = spec.and((root, query, cb) -> root.get("initiator").get("id").in(users));
+        }
+
+        if (states != null && !states.isEmpty()) {
+            List<EventState> eventStates = states.stream()
+                    .map(EventState::valueOf)
+                    .collect(Collectors.toList());
+            spec = spec.and((root, query, cb) -> root.get("state").in(eventStates));
+        }
+
+        if (categories != null && !categories.isEmpty()) {
+            spec = spec.and((root, query, cb) -> root.get("category").get("id").in(categories));
+        }
+
+        if (rangeStart != null) {
+            LocalDateTime start = baseService.parseDateTime(rangeStart);
+            spec = spec.and((root, query, cb) -> cb.greaterThanOrEqualTo(root.get("eventDate"), start));
+        }
+
+        if (rangeEnd != null) {
+            LocalDateTime end = baseService.parseDateTime(rangeEnd);
+            spec = spec.and((root, query, cb) -> cb.lessThanOrEqualTo(root.get("eventDate"), end));
+        }
+
+        List<Event> events = eventRepository.findAll(spec, baseService.createPageRequest(from, size)).getContent();
+
+        log.debug("Found {} events after filtering", events.size());
+
+        return events.stream()
                 .map(this::convertToFullDto)
                 .collect(Collectors.toList());
     }
@@ -161,7 +203,6 @@ public class EventServiceImpl implements EventService {
         log.debug("Event AFTER update fields - Annotation: '{}', Title: '{}'",
                 event.getAnnotation(), event.getTitle());
 
-        // Обработка изменения состояния администратором
         if (updateRequest.getStateAction() != null) {
             switch (updateRequest.getStateAction()) {
                 case PUBLISH_EVENT:
@@ -193,20 +234,82 @@ public class EventServiceImpl implements EventService {
      * Публичный поиск событий
      */
     @Override
+    @Transactional
     public List<EventShortDto> getEventsPublic(String text, List<Long> categories, Boolean paid,
                                                String rangeStart, String rangeEnd, Boolean onlyAvailable,
                                                String sort, int from, int size, String clientIp) {
-        log.debug("Public events search: text={}, categories={}", text, categories);
+        log.debug("Public events search: text={}, categories={}, paid={}, rangeStart={}, rangeEnd={}, onlyAvailable={}",
+                text, categories, paid, rangeStart, rangeEnd, onlyAvailable);
 
-        // Отправляем статистику о просмотре
         baseService.sendStats(clientIp, "/events");
 
-        List<Event> events = eventRepository.findAll()
-                .stream()
-                .filter(event -> event.getState() == EventState.PUBLISHED)
-                .collect(Collectors.toList());
+        LocalDateTime startDateTime = null;
+        LocalDateTime endDateTime = null;
 
-        return events.stream()
+        if (rangeStart != null) {
+            startDateTime = baseService.parseDateTime(rangeStart);
+        }
+        if (rangeEnd != null) {
+            endDateTime = baseService.parseDateTime(rangeEnd);
+        }
+
+        if (startDateTime != null && endDateTime != null && endDateTime.isBefore(startDateTime)) {
+            throw new BadRequestException("Range end cannot be before range start");
+        }
+
+        Specification<Event> spec = Specification.where((root, query, cb) ->
+                cb.equal(root.get("state"), EventState.PUBLISHED));
+
+        if (text != null && !text.isEmpty() && !text.equals("0")) {
+            String searchText = "%" + text.toLowerCase() + "%";
+            spec = spec.and((root, query, cb) ->
+                    cb.or(
+                            cb.like(cb.lower(root.get("annotation")), searchText),
+                            cb.like(cb.lower(root.get("description")), searchText)
+                    ));
+        }
+
+        if (categories != null && !categories.isEmpty() && !categories.contains(0L)) {
+            spec = spec.and((root, query, cb) -> root.get("category").get("id").in(categories));
+        }
+
+        if (paid != null) {
+            spec = spec.and((root, query, cb) -> cb.equal(root.get("paid"), paid));
+        }
+
+        final LocalDateTime finalStartDateTime;
+        if (rangeStart != null) {
+            finalStartDateTime = baseService.parseDateTime(rangeStart);
+        } else {
+            finalStartDateTime = LocalDateTime.now();
+        }
+        spec = spec.and((root, query, cb) -> cb.greaterThanOrEqualTo(root.get("eventDate"), finalStartDateTime));
+
+        if (rangeEnd != null) {
+            final LocalDateTime finalEndDateTime = baseService.parseDateTime(rangeEnd);
+            spec = spec.and((root, query, cb) -> cb.lessThanOrEqualTo(root.get("eventDate"), finalEndDateTime));
+        }
+
+        List<Event> events = eventRepository.findAll(spec, baseService.createPageRequest(from, size)).getContent();
+
+        events.forEach(event -> {
+            event.setViews(event.getViews() + 1);
+        });
+        List<Event> updatedEvents = eventRepository.saveAll(events);
+        log.debug("Increased views for {} events", updatedEvents.size());
+
+        if (Boolean.TRUE.equals(onlyAvailable)) {
+            events = events.stream()
+                    .filter(event -> event.getParticipantLimit() == 0 ||
+                            event.getConfirmedRequests() < event.getParticipantLimit())
+                    .collect(Collectors.toList());
+        }
+
+        List<Event> sortedEvents = sortEvents(events, sort);
+
+        log.debug("Found {} events after public filtering", sortedEvents.size());
+
+        return sortedEvents.stream()
                 .map(this::convertToShortDto)
                 .collect(Collectors.toList());
     }
@@ -215,6 +318,7 @@ public class EventServiceImpl implements EventService {
      * Получение события по ID для публичного доступа
      */
     @Override
+    @Transactional
     public EventFullDto getEventPublic(Long eventId, String clientIp) {
         log.debug("Getting public event id={}", eventId);
 
@@ -224,8 +328,11 @@ public class EventServiceImpl implements EventService {
             throw new NotFoundException("Event with id=" + eventId + " was not found");
         }
 
-        // Отправляем статистику о просмотре
         baseService.sendStats(clientIp, "/events/" + eventId);
+
+        event.setViews(event.getViews() + 1);
+        Event updatedEvent = eventRepository.save(event);
+        log.debug("Event id={} views increased to {}", eventId, updatedEvent.getViews());
 
         return convertToFullDto(event);
     }
@@ -371,6 +478,28 @@ public class EventServiceImpl implements EventService {
                 .lat(location.getLat())
                 .lon(location.getLon())
                 .build();
+    }
+
+    /**
+     * Сортировка событий
+     */
+    private List<Event> sortEvents(List<Event> events, String sort) {
+        if (sort == null) {
+            return events;
+        }
+
+        switch (sort.toUpperCase()) {
+            case "EVENT_DATE":
+                return events.stream()
+                        .sorted(Comparator.comparing(Event::getEventDate))
+                        .collect(Collectors.toList());
+            case "VIEWS":
+                return events.stream()
+                        .sorted(Comparator.comparing(Event::getViews).reversed())
+                        .collect(Collectors.toList());
+            default:
+                return events;
+        }
     }
 }
 

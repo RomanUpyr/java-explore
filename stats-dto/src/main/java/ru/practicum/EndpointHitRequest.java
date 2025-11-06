@@ -42,12 +42,7 @@ public class EndpointHitRequest {
     /**
      * Дата и время, когда был совершен запрос к эндпоинту.
      */
-
-    // Меняем на String
     @NotBlank
     private String timestamp;
-
-    //@NotNull(message = "Timestamp cannot be null")
-    //private LocalDateTime timestamp;
 
 }

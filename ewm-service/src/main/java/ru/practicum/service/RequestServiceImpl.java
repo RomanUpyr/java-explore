@@ -51,23 +51,19 @@ public class RequestServiceImpl implements RequestService {
         User user = baseService.getUserById(userId);
         Event event = baseService.getEventById(eventId);
 
-        // Нельзя участвовать в своем событии
         if (event.getInitiator().getId().equals(userId)) {
             throw new ConflictException("Initiator cannot participate in own event");
         }
 
-        // Событие должно быть опубликовано
         if (event.getState() != EventState.PUBLISHED) {
             throw new ConflictException("Cannot participate in unpublished event");
         }
 
-        // Проверяем лимит участников
         if (event.getParticipantLimit() > 0 &&
                 event.getConfirmedRequests() >= event.getParticipantLimit()) {
             throw new ConflictException("The event has reached participant limit");
         }
 
-        // Проверка дублирования заявки
         if (requestRepository.existsByEventIdAndRequesterId(eventId, userId)) {
             throw new ConflictException("Request already exists");
         }
@@ -79,7 +75,6 @@ public class RequestServiceImpl implements RequestService {
                 .status(RequestStatus.PENDING)
                 .build();
 
-        // Если премодерация отключена, подтверждаем автоматически
         if (!event.getRequestModeration() || event.getParticipantLimit() == 0) {
             request.setStatus(RequestStatus.CONFIRMED);
             event.setConfirmedRequests(event.getConfirmedRequests() + 1);
@@ -104,7 +99,6 @@ public class RequestServiceImpl implements RequestService {
         ParticipationRequest request = requestRepository.findById(requestId)
                 .orElseThrow(() -> new NotFoundException("Request with id=" + requestId + " was not found"));
 
-        // Проверяем, что заявка принадлежит пользователю
         if (!request.getRequester().getId().equals(userId)) {
             throw new NotFoundException("Request with id=" + requestId + " was not found");
         }
@@ -145,7 +139,6 @@ public class RequestServiceImpl implements RequestService {
         Event event = baseService.eventRepository.findByIdAndInitiatorId(eventId, userId)
                 .orElseThrow(() -> new NotFoundException("Event with id=" + eventId + " was not found"));
 
-        // Проверяем лимит участников
         if (event.getParticipantLimit() > 0 &&
                 event.getConfirmedRequests() >= event.getParticipantLimit()) {
             throw new ConflictException("The event has reached participant limit");

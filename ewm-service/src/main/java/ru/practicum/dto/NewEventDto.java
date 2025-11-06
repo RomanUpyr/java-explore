@@ -32,6 +32,7 @@ public class NewEventDto {
     @Builder.Default
     private Boolean paid = false;             // Бесплатное по умолчанию
     @Builder.Default
+    @Min(0)
     private Integer participantLimit = 0;     // Без ограничения участников по умолчанию
     @Builder.Default
     private Boolean requestModeration = true; // Модерация включена по умолчанию
