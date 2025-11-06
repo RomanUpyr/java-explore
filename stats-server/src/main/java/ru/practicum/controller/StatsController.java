@@ -1,6 +1,7 @@
 package ru.practicum.controller;
 
 import ru.practicum.EndpointHitRequest;
+import ru.practicum.exception.BadRequestException;
 import ru.practicum.model.EndpointHit;
 import ru.practicum.ViewStats;
 import ru.practicum.service.StatsService;
@@ -70,6 +71,8 @@ public class StatsController {
         log.debug("Получен GET /stats запрос: start={}, end={}, uris={}, unique={}",
                 startTime, endTime, uris, unique);
 
+        validateTimeRange(startTime, endTime);
+
         if (uris != null) {
             uris = uris.stream()
                     .map(uri -> URLDecoder.decode(uri, StandardCharsets.UTF_8))
@@ -84,7 +87,12 @@ public class StatsController {
     }
 
     private LocalDateTime parseDateTime(String dateTimeStr) {
-        // Простая замена пробела на T для ISO формата
         return LocalDateTime.parse(dateTimeStr.replace(" ", "T"));
+    }
+
+    private void validateTimeRange(LocalDateTime start, LocalDateTime end) {
+        if (start.isAfter(end)) {
+            throw new BadRequestException("Начальная дата не может быть позже конечной");
+        }
     }
 }

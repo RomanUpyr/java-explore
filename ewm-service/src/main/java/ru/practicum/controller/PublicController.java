@@ -2,6 +2,8 @@ package ru.practicum.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+import ru.practicum.EndpointHitRequest;
+import ru.practicum.StatsClient;
 import ru.practicum.dto.*;
 import ru.practicum.service.CategoryService;
 import ru.practicum.service.CompilationService;
@@ -9,7 +11,11 @@ import ru.practicum.service.EventService;
 
 import jakarta.servlet.http.HttpServletRequest;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
+
+import static org.hibernate.validator.internal.engine.messageinterpolation.el.RootResolver.FORMATTER;
 
 /**
  * Публичный API
@@ -21,6 +27,7 @@ public class PublicController {
     private final EventService eventService;
     private final CategoryService categoryService;
     private final CompilationService compilationService;
+    private final StatsClient statsClient;
 
     /**
      * Поиск и фильтрация событий для публичного доступа
@@ -49,6 +56,9 @@ public class PublicController {
                                                @RequestParam(defaultValue = "10") int size,
                                                HttpServletRequest request) {
         String clientIp = getClientIp(request);
+
+        saveHit("/events", clientIp, request);
+
         return eventService.getEventsPublic(text, categories, paid, rangeStart, rangeEnd,
                 onlyAvailable, sort, from, size, clientIp);
     }
@@ -64,6 +74,8 @@ public class PublicController {
     public EventFullDto getEventPublic(@PathVariable Long id,
                                        HttpServletRequest request) {
         String clientIp = getClientIp(request);
+        String uri = "/events/" + id;
+        saveHit(uri, clientIp, request);
         return eventService.getEventPublic(id, clientIp);
     }
 
@@ -76,7 +88,10 @@ public class PublicController {
      */
     @GetMapping("/categories")
     public List<CategoryDto> getCategories(@RequestParam(defaultValue = "0") int from,
-                                           @RequestParam(defaultValue = "10") int size) {
+                                           @RequestParam(defaultValue = "10") int size,
+                                           HttpServletRequest request) {
+        saveHit("/categories", getClientIp(request), request);
+
         return categoryService.getCategories(from, size);
     }
 
@@ -87,7 +102,11 @@ public class PublicController {
      * @return информация о категории
      */
     @GetMapping("/categories/{categoryId}")
-    public CategoryDto getCategory(@PathVariable Long categoryId) {
+    public CategoryDto getCategory(@PathVariable Long categoryId,
+                                   HttpServletRequest request) {
+        String uri = "/categories/" + categoryId;
+        saveHit(uri, getClientIp(request), request);
+
         return categoryService.getCategory(categoryId);
     }
 
@@ -102,7 +121,10 @@ public class PublicController {
     @GetMapping("/compilations")
     public List<CompilationDto> getCompilations(@RequestParam(required = false) Boolean pinned,
                                                 @RequestParam(defaultValue = "0") int from,
-                                                @RequestParam(defaultValue = "10") int size) {
+                                                @RequestParam(defaultValue = "10") int size,
+                                                HttpServletRequest request) {
+        saveHit("/compilations", getClientIp(request), request);
+
         return compilationService.getCompilations(pinned, from, size);
     }
 
@@ -113,8 +135,31 @@ public class PublicController {
      * @return информация о подборке
      */
     @GetMapping("/compilations/{compilationId}")
-    public CompilationDto getCompilation(@PathVariable Long compilationId) {
+    public CompilationDto getCompilation(@PathVariable Long compilationId,
+                                         HttpServletRequest request) {
+        String uri = "/compilations/" + compilationId;
+        saveHit(uri, getClientIp(request), request);
+
         return compilationService.getCompilation(compilationId);
+    }
+
+    /**
+     * Сохраняет информацию о посещении эндпоинта через StatsClient
+     */
+    private void saveHit(String uri, String clientIp, HttpServletRequest request) {
+        try {
+            EndpointHitRequest hitRequest = EndpointHitRequest.builder()
+                    .app("ewm-main-service")
+                    .uri(uri)
+                    .ip(clientIp)
+                    .timestamp(LocalDateTime.now().format(DateTimeFormatter.ofPattern(FORMATTER)))
+                    .build();
+
+            statsClient.saveHit(hitRequest);
+
+        } catch (Exception e) {
+            System.err.println("Ошибка при сохранении статистики для URI: " + uri + " - " + e.getMessage());
+        }
     }
 
     /**

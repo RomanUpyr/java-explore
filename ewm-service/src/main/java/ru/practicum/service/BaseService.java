@@ -90,13 +90,17 @@ public class BaseService {
      */
     public void sendStats(String clientIp, String uri) {
         try {
+            String timestamp = LocalDateTime.now().format(FORMATTER);
+            log.debug("Creating timestamp: {}", timestamp);
+
             EndpointHitRequest hitRequest = EndpointHitRequest.builder()
                     .app("ewm-service")
                     .uri(uri)
                     .ip(clientIp)
-                    .timestamp(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
+                    .timestamp(LocalDateTime.now().format(FORMATTER))
                     .build();
 
+            log.debug("Sending hit request: {}", hitRequest);
             statsClient.saveHit(hitRequest);
             log.debug("Statistics sent for URI: {}, IP: {}", uri, clientIp);
         } catch (Exception e) {
