@@ -1,6 +1,7 @@
 package ru.practicum.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import ru.practicum.model.EndpointHit;
 import ru.practicum.ViewStats;
 import org.springframework.data.jpa.repository.Query;
@@ -17,7 +18,7 @@ import java.util.List;
 public interface StatsRepository extends JpaRepository<EndpointHit, Long> {
 
     /**
-     * Получает общую статистику по посещениям (все).
+     * Получает общую статистику по посещениям .
      */
     @Query("SELECT new ru.practicum.ViewStats(h.app, h.uri, COUNT(h.id)) " +
             "FROM EndpointHit h " +

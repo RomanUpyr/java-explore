@@ -241,8 +241,6 @@ public class EventServiceImpl implements EventService {
         log.debug("Public events search: text={}, categories={}, paid={}, rangeStart={}, rangeEnd={}, onlyAvailable={}",
                 text, categories, paid, rangeStart, rangeEnd, onlyAvailable);
 
-        baseService.sendStats(clientIp, "/events");
-
         LocalDateTime startDateTime = null;
         LocalDateTime endDateTime = null;
 
@@ -327,8 +325,6 @@ public class EventServiceImpl implements EventService {
         if (event.getState() != EventState.PUBLISHED) {
             throw new NotFoundException("Event with id=" + eventId + " was not found");
         }
-
-        baseService.sendStats(clientIp, "/events/" + eventId);
 
         event.setViews(event.getViews() + 1);
         Event updatedEvent = eventRepository.save(event);

@@ -15,8 +15,6 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
-import static org.hibernate.validator.internal.engine.messageinterpolation.el.RootResolver.FORMATTER;
-
 /**
  * Публичный API
  */
@@ -28,6 +26,8 @@ public class PublicController {
     private final CategoryService categoryService;
     private final CompilationService compilationService;
     private final StatsClient statsClient;
+
+    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     /**
      * Поиск и фильтрация событий для публичного доступа
@@ -152,7 +152,7 @@ public class PublicController {
                     .app("ewm-main-service")
                     .uri(uri)
                     .ip(clientIp)
-                    .timestamp(LocalDateTime.now().format(DateTimeFormatter.ofPattern(FORMATTER)))
+                    .timestamp(LocalDateTime.now().format(FORMATTER))
                     .build();
 
             statsClient.saveHit(hitRequest);

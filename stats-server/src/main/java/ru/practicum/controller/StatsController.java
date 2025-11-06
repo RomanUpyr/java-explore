@@ -4,6 +4,7 @@ import ru.practicum.EndpointHitRequest;
 import ru.practicum.exception.BadRequestException;
 import ru.practicum.model.EndpointHit;
 import ru.practicum.ViewStats;
+import ru.practicum.repository.StatsRepository;
 import ru.practicum.service.StatsService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,6 +25,7 @@ import java.util.List;
 @RestController
 @RequiredArgsConstructor
 public class StatsController {
+    private final StatsRepository statsRepository;
 
     /**
      * Сервис для бизнес-логики статистики.
@@ -68,10 +70,19 @@ public class StatsController {
         LocalDateTime startTime = parseDateTime(start);
         LocalDateTime endTime = parseDateTime(end);
 
+        log.debug("=== STATS REQUEST DETAILS ===");
+        log.debug("Start: {}, End: {}", startTime, endTime);
+        log.debug("URIs: {}", uris);
+        log.debug("Unique: {}", unique);
+
         log.debug("Получен GET /stats запрос: start={}, end={}, uris={}, unique={}",
                 startTime, endTime, uris, unique);
 
         validateTimeRange(startTime, endTime);
+
+        // Проверим сколько всего записей в БД
+        long totalHits = statsRepository.count();
+        log.debug("TOTAL HITS IN DB: {}", totalHits);
 
         if (uris != null) {
             uris = uris.stream()
@@ -81,7 +92,10 @@ public class StatsController {
         }
 
         List<ViewStats> stats = statsService.getStats(startTime, endTime, uris, unique);
-        log.debug("Возвращено {} записей статистики", stats.size());
+
+        log.debug("RETURNING STATS: {} records", stats.size());
+        stats.forEach(s -> log.debug("  -> {}: {} hits", s.getUri(), s.getHits()));
+        log.debug("=== END STATS REQUEST ===");
 
         return stats;
     }
