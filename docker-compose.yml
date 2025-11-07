@@ -29,7 +29,8 @@ services:
     ports:
       - "9090:9090"
     depends_on:
-      - stats-db
+      stats-db:
+        condition: service_healthy
     networks:
       - app-network
     healthcheck:
@@ -52,6 +53,11 @@ services:
       - ewm_db_data:/var/lib/postgresql/data
     networks:
       - app-network
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
 
   ewm-service:
@@ -64,10 +70,18 @@ services:
     ports:
       - "8080:8080"
     depends_on:
-      - ewm-db
-      - stats-server
+      ewm-db:
+        condition: service_healthy
+      stats-server:
+        condition: service_healthy
     networks:
       - app-network
+    healthcheck:
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/actuator/health" ]
+      interval: 5s
+      timeout: 3s
+      retries: 25
+      start_period: 30s
 
 networks:
   app-network:
