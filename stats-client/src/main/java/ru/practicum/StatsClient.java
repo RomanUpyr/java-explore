@@ -25,10 +25,6 @@ public class StatsClient {
      */
     private final WebClient webClient;
     /**
-     * Базовый URL сервиса статистики.
-     */
-    private final String statsServiceUrl;
-    /**
      * Форматтер для преобразования даты-времени в строку.
      */
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
@@ -41,7 +37,7 @@ public class StatsClient {
 
         try {
             webClient.post()
-                    .uri(statsServiceUrl + "/hit")
+                    .uri("/hit")
                     .contentType(MediaType.APPLICATION_JSON)
                     .bodyValue(hitRequest)
                     .retrieve()
@@ -78,7 +74,13 @@ public class StatsClient {
 
         try {
             List<ViewStats> stats = webClient.get()
-                    .uri(url)
+                    .uri(uriBuilder -> uriBuilder
+                            .path("/stats")
+                            .queryParam("start", encodeDateTime(start))
+                            .queryParam("end", encodeDateTime(end))
+                            .queryParam("unique", unique != null ? unique : false)
+                            .queryParam("uris", uris != null && !uris.isEmpty() ? uris.toArray(new String[0]) : new String[0])
+                            .build())
                     .accept(MediaType.APPLICATION_JSON)
                     .retrieve()
                     .onStatus(
@@ -90,8 +92,7 @@ public class StatsClient {
                                         "Ошибка сервиса статистики: " + clientResponse.statusCode()));
                             }
                     )
-                    .bodyToMono(new ParameterizedTypeReference<List<ViewStats>>() {
-                    })
+                    .bodyToMono(new ParameterizedTypeReference<List<ViewStats>>() {})
                     .doOnSuccess(response ->
                             log.debug("Успешно получено {} записей статистики", response.size()))
                     .doOnError(error ->
@@ -99,8 +100,8 @@ public class StatsClient {
                     .onErrorReturn(List.of())
                     .block();
 
-            log.info("Получено {} записей статистики", stats.size());
-            return stats;
+            log.info("Получено {} записей статистики", stats != null ? stats.size() : 0);
+            return stats != null ? stats : List.of();
 
         } catch (Exception e) {
             log.error("Исключение при получении статистики: {}", e.getMessage());
@@ -116,7 +117,7 @@ public class StatsClient {
                                  List<String> uris, Boolean unique) {
 
         UriComponentsBuilder uriBuilder = UriComponentsBuilder
-                .fromHttpUrl(statsServiceUrl + "/stats")
+                .fromPath("/stats")
                 .queryParam("start", encodeDateTime(start))
                 .queryParam("end", encodeDateTime(end))
                 .queryParam("unique", unique != null ? unique : false);
@@ -143,7 +144,7 @@ public class StatsClient {
     public boolean isServiceAvailable() {
         try {
             return webClient.get()
-                    .uri(statsServiceUrl + "/actuator/health")
+                    .uri("/actuator/health")
                     .retrieve()
                     .bodyToMono(String.class)
                     .map(response -> response.contains("\"status\":\"UP\""))
