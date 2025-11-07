@@ -327,7 +327,7 @@ public class EventServiceImpl implements EventService {
             throw new NotFoundException("Event with id=" + eventId + " was not found");
         }
 
-        event.setViews(event.getViews());
+        event.setViews(event.getViews() + 1);
         Event updatedEvent = eventRepository.save(event);
         log.debug("Event id={} views increased to {}", eventId, updatedEvent.getViews());
 

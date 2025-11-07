@@ -80,15 +80,20 @@ public class StatsController {
 
         validateTimeRange(startTime, endTime);
 
-        // Проверим сколько всего записей в БД
         long totalHits = statsRepository.count();
         log.debug("TOTAL HITS IN DB: {}", totalHits);
 
-        if (uris != null) {
-            uris = uris.stream()
-                    .map(uri -> URLDecoder.decode(uri, StandardCharsets.UTF_8))
-                    .toList();
-            log.debug("Декодированные URIs: {}", uris);
+        if (uris != null && uris.contains("/events")) {
+            List<EndpointHit> eventsHits = statsRepository.findAllByUri("/events");
+            List<String> uniqueIps = statsRepository.findUniqueIpsByUri("/events");
+
+            log.debug("DEBUG: Всего записей для /events: {}", eventsHits.size());
+            log.debug("DEBUG: Уникальные IP для /events: {}", uniqueIps);
+            log.debug("DEBUG: Количество уникальных IP: {}", uniqueIps.size());
+
+            eventsHits.forEach(hit ->
+                    log.debug("DEBUG: Запись: app={}, uri={}, ip={}, time={}",
+                            hit.getApp(), hit.getUri(), hit.getIp(), hit.getTimestamp()));
         }
 
         List<ViewStats> stats = statsService.getStats(startTime, endTime, uris, unique);
