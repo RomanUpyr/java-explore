@@ -1,3 +1,6 @@
+-- Создание пользовательских типов ENUM
+CREATE TYPE event_state AS ENUM ('PENDING', 'PUBLISHED', 'CANCELED');
+CREATE TYPE request_status AS ENUM ('PENDING', 'CONFIRMED', 'REJECTED', 'CANCELED');
 
 -- Таблица категорий событий
 CREATE TABLE IF NOT EXISTS categories (

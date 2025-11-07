@@ -13,6 +13,8 @@ import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
 
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -78,27 +80,20 @@ public class StatsController {
 
         validateTimeRange(startTime, endTime);
 
+        // Проверим сколько всего записей в БД
         long totalHits = statsRepository.count();
         log.debug("TOTAL HITS IN DB: {}", totalHits);
 
-        if (uris != null && uris.contains("/events")) {
-            List<EndpointHit> eventsHits = statsRepository.findAllByUri("/events");
-            List<String> uniqueIps = statsRepository.findUniqueIpsByUri("/events");
-
-            log.debug("DEBUG: Всего записей для /events: {}", eventsHits.size());
-            log.debug("DEBUG: Уникальные IP для /events: {}", uniqueIps);
-            log.debug("DEBUG: Количество уникальных IP: {}", uniqueIps.size());
-
-            eventsHits.forEach(hit ->
-                    log.debug("DEBUG: Запись: app={}, uri={}, ip={}, time={}",
-                            hit.getApp(), hit.getUri(), hit.getIp(), hit.getTimestamp()));
+        if (uris != null) {
+            uris = uris.stream()
+                    .map(uri -> URLDecoder.decode(uri, StandardCharsets.UTF_8))
+                    .toList();
+            log.debug("Декодированные URIs: {}", uris);
         }
 
         List<ViewStats> stats = statsService.getStats(startTime, endTime, uris, unique);
 
-        log.debug("RETURNING STATS: {} records", stats.size());
-        stats.forEach(s -> log.debug("  -> {}: {} hits", s.getUri(), s.getHits()));
-        log.debug("=== END STATS REQUEST ===");
+        log.debug("Возвращено {} записей статистики", stats.size());
 
         return stats;
     }
