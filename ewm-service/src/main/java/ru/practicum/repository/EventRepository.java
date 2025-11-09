@@ -33,4 +33,9 @@ public interface EventRepository extends JpaRepository<Event, Long>, JpaSpecific
      */
     List<Event> findByCategoryId(Long categoryId);
 
+    /**
+     * Проверяем, что нет связанных событий
+     */
+    boolean existsByCategoryId(Long categoryId);
+
 }

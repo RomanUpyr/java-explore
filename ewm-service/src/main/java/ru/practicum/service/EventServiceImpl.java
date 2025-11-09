@@ -1,5 +1,6 @@
 package ru.practicum.service;
 
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.jpa.domain.Specification;
@@ -25,6 +26,7 @@ import java.util.stream.Collectors;
 public class EventServiceImpl implements EventService {
     private final EventRepository eventRepository;
     private final BaseService baseService;
+    private final StatsTrackingService statsTrackingService;
 
 
     /**
@@ -234,10 +236,10 @@ public class EventServiceImpl implements EventService {
      * Публичный поиск событий
      */
     @Override
-    @Transactional
+    @Transactional(readOnly = true)
     public List<EventShortDto> getEventsPublic(String text, List<Long> categories, Boolean paid,
                                                String rangeStart, String rangeEnd, Boolean onlyAvailable,
-                                               String sort, int from, int size, String clientIp) {
+                                               String sort, int from, int size, HttpServletRequest request) {
         log.debug("Public events search: text={}, categories={}, paid={}, rangeStart={}, rangeEnd={}, onlyAvailable={}",
                 text, categories, paid, rangeStart, rangeEnd, onlyAvailable);
 
@@ -290,13 +292,6 @@ public class EventServiceImpl implements EventService {
 
         List<Event> events = eventRepository.findAll(spec, baseService.createPageRequest(from, size)).getContent();
 
-        events.forEach(event -> {
-            event.setViews(event.getViews());
-
-        });
-        List<Event> updatedEvents = eventRepository.saveAll(events);
-        log.debug("Increased views for {} events", updatedEvents.size());
-
         if (Boolean.TRUE.equals(onlyAvailable)) {
             events = events.stream()
                     .filter(event -> event.getParticipantLimit() == 0 ||
@@ -317,8 +312,8 @@ public class EventServiceImpl implements EventService {
      * Получение события по ID для публичного доступа
      */
     @Override
-    @Transactional
-    public EventFullDto getEventPublic(Long eventId, String clientIp) {
+    @Transactional(readOnly = true)
+    public EventFullDto getEventPublic(Long eventId, HttpServletRequest request) {
         log.debug("Getting public event id={}", eventId);
 
         Event event = baseService.getEventById(eventId);
@@ -326,10 +321,6 @@ public class EventServiceImpl implements EventService {
         if (event.getState() != EventState.PUBLISHED) {
             throw new NotFoundException("Event with id=" + eventId + " was not found");
         }
-
-        event.setViews(event.getViews() + 1);
-        Event updatedEvent = eventRepository.save(event);
-        log.debug("Event id={} views increased to {}", eventId, updatedEvent.getViews());
 
         return convertToFullDto(event);
     }

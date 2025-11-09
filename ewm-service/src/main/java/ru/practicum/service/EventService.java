@@ -1,5 +1,6 @@
 package ru.practicum.service;
 
+import jakarta.servlet.http.HttpServletRequest;
 import ru.practicum.dto.*;
 
 import java.util.List;
@@ -23,8 +24,8 @@ public interface EventService {
 
     List<EventShortDto> getEventsPublic(String text, List<Long> categories, Boolean paid,
                                         String rangeStart, String rangeEnd, Boolean onlyAvailable,
-                                        String sort, int from, int size, String clientIp);
+                                        String sort, int from, int size, HttpServletRequest request);
 
-    EventFullDto getEventPublic(Long eventId, String clientIp);
+    EventFullDto getEventPublic(Long eventId, HttpServletRequest request);
 
 }

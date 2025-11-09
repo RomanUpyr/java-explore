@@ -5,14 +5,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import ru.practicum.EndpointHitRequest;
-import ru.practicum.StatsClient;
 import ru.practicum.model.*;
 import ru.practicum.repository.*;
 import ru.practicum.exception.*;
 
+import jakarta.servlet.http.HttpServletRequest;
+
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 /**
@@ -27,9 +26,7 @@ public class BaseService {
     protected final EventRepository eventRepository;
     protected final RequestRepository requestRepository;
     protected final CompilationRepository compilationRepository;
-    protected final StatsClient statsClient;
-
-    protected static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    protected final StatsTrackingService statsTrackingService;
 
     /**
      * Проверяет существование пользователя
@@ -74,14 +71,14 @@ public class BaseService {
      * Парсит строку в LocalDateTime
      */
     protected LocalDateTime parseDateTime(String dateTimeStr) {
-        return LocalDateTime.parse(dateTimeStr.replace(" ", "T"));
+        return statsTrackingService.parseDateTime(dateTimeStr);
     }
 
     /**
      * Форматирует LocalDateTime в строку
      */
     protected String formatDateTime(LocalDateTime dateTime) {
-        return dateTime.format(FORMATTER);
+        return statsTrackingService.formatDateTime(dateTime);
     }
 
 
@@ -89,23 +86,21 @@ public class BaseService {
      * Отправляет статистику
      */
     public void sendStats(String clientIp, String uri) {
-        try {
-            String timestamp = LocalDateTime.now().format(FORMATTER);
-            log.debug("Creating timestamp: {}", timestamp);
+        statsTrackingService.trackHit(uri, clientIp);
+    }
 
-            EndpointHitRequest hitRequest = EndpointHitRequest.builder()
-                    .app("ewm-service")
-                    .uri(uri)
-                    .ip(clientIp)
-                    .timestamp(LocalDateTime.now().format(FORMATTER))
-                    .build();
+    /**
+     * Отправляет статистику на основе HttpServletRequest
+     */
+    public void sendStats(HttpServletRequest request) {
+        statsTrackingService.trackHit(request);
+    }
 
-            log.debug("Sending hit request: {}", hitRequest);
-            statsClient.saveHit(hitRequest);
-            log.debug("Statistics sent for URI: {}, IP: {}", uri, clientIp);
-        } catch (Exception e) {
-            log.warn("Failed to send stats for uri: {}", uri, e);
-        }
+    /**
+     * Получает IP клиента
+     */
+    public String getClientIp(HttpServletRequest request) {
+        return statsTrackingService.getClientIp(request);
     }
 
     /**
@@ -134,6 +129,13 @@ public class BaseService {
      */
     public List<Event> getEventsByCategoryId(Long categoryId) {
         return eventRepository.findByCategoryId(categoryId);
+    }
+
+    /**
+     * Проверяет существование пользователя
+     */
+    public boolean userExists(Long userId) {
+        return userRepository.existsById(userId);
     }
 
 }

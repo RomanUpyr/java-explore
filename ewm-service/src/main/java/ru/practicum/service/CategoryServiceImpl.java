@@ -7,7 +7,6 @@ import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.dto.CategoryDto;
 import ru.practicum.dto.NewCategoryDto;
 import ru.practicum.model.Category;
-import ru.practicum.model.Event;
 import ru.practicum.repository.CategoryRepository;
 import ru.practicum.repository.EventRepository;
 import ru.practicum.exception.ConflictException;
@@ -104,9 +103,7 @@ public class CategoryServiceImpl implements CategoryService {
 
         Category category = baseService.getCategoryById(categoryId);
 
-        // Проверяем, что нет связанных событий
-        List<Event> events = eventRepository.findByCategoryId(categoryId);
-        if (!events.isEmpty()) {
+        if (eventRepository.existsByCategoryId(categoryId)) {
             throw new ConflictException("The category is not empty");
         }
 
