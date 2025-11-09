@@ -138,4 +138,11 @@ public class BaseService {
         return userRepository.existsById(userId);
     }
 
+    /**
+     * Получает актуальное количество просмотров для события
+     */
+    public int getEventViews(Long eventId) {
+        return statsTrackingService.getEventViews(eventId);
+    }
+
 }
