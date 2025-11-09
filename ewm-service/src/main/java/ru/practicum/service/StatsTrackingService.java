@@ -2,6 +2,7 @@ package ru.practicum.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.task.TaskExecutor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.StatsClient;
@@ -16,6 +17,7 @@ import ru.practicum.repository.EventRepository;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Objects;
 
 @Slf4j
 @Service
@@ -23,6 +25,7 @@ import java.util.List;
 public class StatsTrackingService {
     private final StatsClient statsClient;
     private final EventRepository eventRepository;
+    private final TaskExecutor taskExecutor;
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     private static final String DEFAULT_APP_NAME = "ewm-main-service";
 
@@ -108,12 +111,27 @@ public class StatsTrackingService {
         return LocalDateTime.parse(dateTimeStr.replace(" ", "T"));
     }
 
-    @Transactional
-    public void updateEventViews(Long eventId, String clientIp) {
-        try {
+    /**
+     * Асинхронное обновление просмотров события
+     */
+    public void updateEventViewsAsync(Long eventId) {
+        taskExecutor.execute(() -> {
+            try {
+                // Даем время на обработку статистики
+                Thread.sleep(500);
+                updateEventViews(eventId);
+            } catch (Exception e) {
+                log.error("Ошибка при асинхронном обновлении просмотров для события ID: {}", eventId, e);
+            }
+        });
+    }
 
-            trackHit("/events/" + eventId, clientIp);
-            Thread.sleep(100);
+    /**
+     * Обновление просмотров события (синхронная версия)
+     */
+    @Transactional
+    public void updateEventViews(Long eventId) {
+        try {
 
             // Получаем статистику просмотров для конкретного события
             LocalDateTime start = LocalDateTime.now().minusYears(1);
@@ -130,10 +148,12 @@ public class StatsTrackingService {
             Event event = eventRepository.findById(eventId)
                     .orElseThrow(() -> new NotFoundException("Event with id=" + eventId + " not found"));
 
-            event.setViews(uniqueViews);
-            eventRepository.save(event);
+            if (!Objects.equals(event.getViews(), uniqueViews)) {
+                event.setViews(uniqueViews);
+                eventRepository.save(event);
 
             log.debug("Updated views for event id={}: {}", eventId, uniqueViews);
+            }
 
         } catch (Exception e) {
             log.error("Failed to update views for event id={}", eventId, e);
@@ -141,21 +161,14 @@ public class StatsTrackingService {
     }
 
     /**
-     * Получает количество просмотров события (без обновления)
+     * Получает количество просмотров события (синхронно)
      */
+    @Transactional(readOnly = true)
     public int getEventViews(Long eventId) {
         try {
-            LocalDateTime start = LocalDateTime.now().minusYears(1);
-            LocalDateTime end = LocalDateTime.now();
-            List<String> uris = List.of("/events/" + eventId);
-
-            List<ViewStats> stats = statsClient.getStats(start, end, uris, true);
-
-            if (!stats.isEmpty()) {
-                return Math.toIntExact(stats.get(0).getHits());
-            }
-            return 0;
-
+            Event event = eventRepository.findById(eventId)
+                    .orElseThrow(() -> new NotFoundException("Event with id=" + eventId + " not found"));
+            return Math.toIntExact(event.getViews());
         } catch (Exception e) {
             log.error("Failed to get views for event id={}", eventId, e);
             return 0;

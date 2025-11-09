@@ -35,12 +35,12 @@ public class StatsAspect {
 
             statsTrackingService.trackHit(request);
 
-            if (uri.startsWith("/events/")) {
+            if (isEventDetailsRequest(uri)) {
                 try {
                     Long eventId = extractEventIdFromUri(uri);
                     if (eventId != null) {
                         log.debug("Обновление просмотров для события ID: {}", eventId);
-                        statsTrackingService.updateEventViews(eventId, clientIp);
+                        statsTrackingService.updateEventViewsAsync(eventId);
                     }
                 } catch (Exception e) {
                     log.debug("Could not extract event ID from URI: {}", uri);
@@ -50,6 +50,10 @@ public class StatsAspect {
         } catch (Exception e) {
             log.error("Ошибка в аспекте при сохранении статистики", e);
         }
+    }
+
+    private boolean isEventDetailsRequest(String uri) {
+        return uri.startsWith("/events/") && !uri.equals("/events");
     }
 
     private Long extractEventIdFromUri(String uri) {
