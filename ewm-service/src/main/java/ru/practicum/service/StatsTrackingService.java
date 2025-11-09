@@ -111,6 +111,10 @@ public class StatsTrackingService {
     @Transactional
     public void updateEventViews(Long eventId, String clientIp) {
         try {
+
+            trackHit("/events/" + eventId, clientIp);
+            Thread.sleep(100);
+
             // Получаем статистику просмотров для конкретного события
             LocalDateTime start = LocalDateTime.now().minusYears(1);
             LocalDateTime end = LocalDateTime.now();

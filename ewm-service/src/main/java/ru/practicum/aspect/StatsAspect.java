@@ -25,38 +25,21 @@ public class StatsAspect {
     public void publicEndpoints() {
     }
 
-    // Дополнительный pointcut для методов без HttpServletRequest в параметрах
-    @AfterReturning("publicEndpoints()")
-    public void saveHitForMethodsWithoutRequest(JoinPoint joinPoint) {
-        try {
-            Object[] args = joinPoint.getArgs();
-            for (Object arg : args) {
-                if (arg instanceof HttpServletRequest) {
-                    HttpServletRequest request = (HttpServletRequest) arg;
-                    statsTrackingService.trackHit(request);
-                    log.debug("Статистика сохранена через аспект для URI: {}", request.getRequestURI());
-                    break;
-                }
-            }
-        } catch (Exception e) {
-            log.error("Ошибка в аспекте при сохранении статистики", e);
-        }
-    }
-
     @AfterReturning("publicEndpoints() && args(.., request)")
     public void saveHitAfterSuccessfulRequest(JoinPoint joinPoint, HttpServletRequest request) {
         try {
             String uri = request.getRequestURI();
             String clientIp = baseService.getClientIp(request);
 
-            // Отправляем статистику
+            log.debug("Аспект сработал для URI: {}, IP: {}", uri, clientIp);
+
             statsTrackingService.trackHit(request);
 
-            // Обновляем просмотры если это запрос к событию
             if (uri.startsWith("/events/")) {
                 try {
                     Long eventId = extractEventIdFromUri(uri);
                     if (eventId != null) {
+                        log.debug("Обновление просмотров для события ID: {}", eventId);
                         statsTrackingService.updateEventViews(eventId, clientIp);
                     }
                 } catch (Exception e) {
@@ -71,7 +54,6 @@ public class StatsAspect {
 
     private Long extractEventIdFromUri(String uri) {
         try {
-            // URI вида "/events/123" или "/events/123/something"
             String[] parts = uri.split("/");
             for (int i = 0; i < parts.length; i++) {
                 if ("events".equals(parts[i]) && i + 1 < parts.length) {
