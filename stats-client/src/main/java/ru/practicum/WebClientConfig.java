@@ -24,6 +24,7 @@ public class WebClientConfig {
      */
     @Bean
     public WebClient webClient() {
+        log.debug("Инициализация WebClient с URL: {}", statsServiceUrl);
         return WebClient.builder()
                 .baseUrl(statsServiceUrl)
                 .defaultHeader("User-Agent", "Stats-Client/1.0")
@@ -35,7 +36,7 @@ public class WebClientConfig {
      */
     @Bean
     public StatsClient statsClient(WebClient webClient) {
-        log.info("Инициализация StatsClient с URL: {}", statsServiceUrl);
-        return new StatsClient(webClient, statsServiceUrl);
+        log.debug("Инициализация StatsClient с URL: {}", statsServiceUrl);
+        return new StatsClient(webClient);
     }
 }
