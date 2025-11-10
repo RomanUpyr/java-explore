@@ -27,6 +27,7 @@ public class EventServiceImpl implements EventService {
     private final EventRepository eventRepository;
     private final BaseService baseService;
     private final StatsTrackingService statsTrackingService;
+    private final CommentService commentService;
 
 
     /**
@@ -36,7 +37,9 @@ public class EventServiceImpl implements EventService {
     public List<EventShortDto> getEventsByUser(Long userId, int from, int size) {
         log.debug("Getting events for user id={}, from={}, size={}", userId, from, size);
 
-        baseService.getUserById(userId);
+        if (!baseService.userExists(userId)) {
+            throw new NotFoundException("User with id=" + userId + " was not found");
+        }
 
         return eventRepository.findByInitiatorId(userId, baseService.createPageRequest(from, size))
                 .stream()
@@ -91,7 +94,10 @@ public class EventServiceImpl implements EventService {
     public EventFullDto getEventByUser(Long userId, Long eventId) {
         log.debug("Getting event id={} for user id={}", eventId, userId);
 
-        baseService.getUserById(userId);
+        if (!baseService.userExists(userId)) {
+            throw new NotFoundException("User with id=" + userId + " was not found");
+        }
+
         Event event = eventRepository.findByIdAndInitiatorId(eventId, userId)
                 .orElseThrow(() -> new NotFoundException("Event with id=" + eventId + " was not found"));
 
@@ -106,7 +112,10 @@ public class EventServiceImpl implements EventService {
     public EventFullDto updateEventByUser(Long userId, Long eventId, UpdateEventUserRequest updateRequest) {
         log.debug("Updating event id={} for user id={}: {}", eventId, userId, updateRequest);
 
-        baseService.getUserById(userId);
+        if (!baseService.userExists(userId)) {
+            throw new NotFoundException("User with id=" + userId + " was not found");
+        }
+
         Event event = eventRepository.findByIdAndInitiatorId(eventId, userId)
                 .orElseThrow(() -> new NotFoundException("Event with id=" + eventId + " was not found"));
 
@@ -412,6 +421,9 @@ public class EventServiceImpl implements EventService {
      * Конвертация Event в EventFullDto
      */
     private EventFullDto convertToFullDto(Event event) {
+
+        Long commentsCount = commentService.getPublishedCommentsCount(event.getId());
+
         return EventFullDto.builder()
                 .id(event.getId())
                 .annotation(event.getAnnotation())
@@ -429,6 +441,7 @@ public class EventServiceImpl implements EventService {
                 .state(event.getState())
                 .title(event.getTitle())
                 .views(event.getViews())
+                .commentsCount(commentsCount)
                 .build();
     }
 
@@ -436,6 +449,9 @@ public class EventServiceImpl implements EventService {
      * Конвертация Event в EventShortDto
      */
     private EventShortDto convertToShortDto(Event event) {
+
+        Long commentsCount = commentService.getPublishedCommentsCount(event.getId());
+
         return EventShortDto.builder()
                 .id(event.getId())
                 .annotation(event.getAnnotation())
@@ -446,6 +462,7 @@ public class EventServiceImpl implements EventService {
                 .paid(event.getPaid())
                 .title(event.getTitle())
                 .views(event.getViews())
+                .commentsCount(commentsCount)
                 .build();
     }
 

@@ -1,0 +1,312 @@
+{
+  "info": {
+    "name": "Comments Service",
+    "description": "Тесты для комментариев",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "userId",
+      "value": "3560",
+      "type": "string"
+    },
+    {
+      "key": "eventId",
+      "value": "2684",
+      "type": "string"
+    },
+    {
+      "key": "commentId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Создание комментария",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"text\": \"Отличное мероприятие! Очень понравилась организация.\",\n  \"eventId\": {{eventId}}\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/users/{{userId}}/comments",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "users",
+            "{{userId}}",
+            "comments"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Статус 201 - комментарий создан\", function () {",
+              "    pm.response.to.have.status(201);",
+              "});",
+              "",
+              "const response = pm.response.json();",
+              "console.log(\"Создан комментарий:\", response);",
+              "",
+              "pm.test(\"Ответ содержит все поля\", function () {",
+              "    pm.expect(response).to.include.keys('id', 'text', 'eventId', 'authorId', 'status', 'createdOn');",
+              "});",
+              "",
+              "pm.test(\"Статус PENDING\", function () {",
+              "    pm.expect(response.status).to.equal('PENDING');",
+              "});",
+              "",
+              "pm.test(\"ID автора правильный\", function () {",
+              "    pm.expect(response.authorId).to.equal(parseInt(pm.collectionVariables.get(\"userId\")));",
+              "});",
+              "",
+              "// Сохраняем ID комментария",
+              "pm.collectionVariables.set(\"commentId\", response.id);",
+              "console.log(\"Создан комментарий ID:\", response.id);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Получение комментариев для модерации",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/admin/comments",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "admin",
+            "comments"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Статус 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "const response = pm.response.json();",
+              "console.log(\"Комментарии для модерации:\", response);",
+              "",
+              "pm.test(\"Ответ - массив\", function () {",
+              "    pm.expect(response).to.be.an('array');",
+              "});",
+              "",
+              "if (response.length > 0) {",
+              "    pm.test(\"Содержит комментарии в статусе PENDING\", function () {",
+              "        response.forEach(comment => {",
+              "            pm.expect(comment.status).to.equal('PENDING');",
+              "        });",
+              "    });",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Модерация комментария (публикация)",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"status\": \"PUBLISHED\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/admin/comments/{{commentId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "admin",
+            "comments",
+            "{{commentId}}"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Статус 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "const response = pm.response.json();",
+              "console.log(\"Промодерированный комментарий:\", response);",
+              "",
+              "pm.test(\"Статус изменен на PUBLISHED\", function () {",
+              "    pm.expect(response.status).to.equal('PUBLISHED');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Получение опубликованных комментариев",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/events/{{eventId}}/comments",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "events",
+            "{{eventId}}",
+            "comments"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Статус 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "const response = pm.response.json();",
+              "console.log(\"Опубликованные комментарии:\", response);",
+              "",
+              "pm.test(\"Ответ - массив\", function () {",
+              "    pm.expect(response).to.be.an('array');",
+              "});",
+              "",
+              "if (response.length > 0) {",
+              "    pm.test(\"Все комментарии PUBLISHED\", function () {",
+              "        response.forEach(comment => {",
+              "            pm.expect(comment.status).to.equal('PUBLISHED');",
+              "        });",
+              "    });",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Обновление комментария пользователем",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"text\": \"Обновленный комментарий: все было просто супер!\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/users/{{userId}}/comments/{{commentId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "users",
+            "{{userId}}",
+            "comments",
+            "{{commentId}}"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Статус 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "const response = pm.response.json();",
+              "console.log(\"Обновленный комментарий:\", response);",
+              "",
+              "pm.test(\"Текст обновлен\", function () {",
+              "    pm.expect(response.text).to.equal(\"Обновленный комментарий: все было просто супер!\");",
+              "});",
+              "",
+              "pm.test(\"Статус вернулся к PENDING\", function () {",
+              "    pm.expect(response.status).to.equal('PENDING');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Удаление комментария",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/users/{{userId}}/comments/{{commentId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "users",
+            "{{userId}}",
+            "comments",
+            "{{commentId}}"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Статус 204\", function () {",
+              "    pm.response.to.have.status(204);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    }
+  ]
+}

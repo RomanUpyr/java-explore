@@ -23,6 +23,7 @@ public class AdminController {
     private final CategoryService categoryService;
     private final EventService eventService;
     private final CompilationService compilationService;
+    private final CommentService commentService;
 
     /**
      * Получение списка пользователей с возможностью фильтрации
@@ -170,5 +171,33 @@ public class AdminController {
     public CompilationDto updateCompilation(@PathVariable Long compilationId,
                                             @Valid @RequestBody UpdateCompilationRequest updateRequest) {
         return compilationService.updateCompilation(compilationId, updateRequest);
+    }
+
+    /**
+     * Получение комментариев для модерации
+     *
+     * @param from начальная позиция (по умолчанию 0)
+     * @param size количество элементов на странице (по умолчанию 10)
+     * @return список комментариев, ожидающих модерации
+     */
+    @GetMapping("/comments")
+    public List<CommentDto> getCommentsForModeration(@RequestParam(defaultValue = "0") int from,
+                                                     @RequestParam(defaultValue = "10") int size) {
+        log.info("Получение комментариев для модерации, from: {}, size: {}", from, size);
+        return commentService.getCommentsForModeration(from, size);
+    }
+
+    /**
+     * Модерация комментария
+     *
+     * @param commentId ID комментария для модерации
+     * @param adminUpdateDto запрос на изменение статуса комментария
+     * @return модерированный комментарий
+     */
+    @PatchMapping("/comments/{commentId}")
+    public CommentDto moderateComment(@PathVariable Long commentId,
+                                      @Valid @RequestBody CommentAdminUpdateDto adminUpdateDto) {
+        log.info("Модерация комментария ID: {}, новый статус: {}", commentId, adminUpdateDto.getStatus());
+        return commentService.moderateComment(commentId, adminUpdateDto);
     }
 }

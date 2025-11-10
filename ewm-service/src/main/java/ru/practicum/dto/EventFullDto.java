@@ -28,4 +28,5 @@ public class EventFullDto {
     private EventState state;                 // Текущее состояние события (PENDING, PUBLISHED, CANCELED)
     private String title;                     // Заголовок события
     private Long views;                       // Количество просмотров события
+    private Long commentsCount;               // Количество комментариев
 }

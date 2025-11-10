@@ -23,6 +23,7 @@ import java.util.stream.Collectors;
 public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final BaseService baseService;
+    private final CommentService commentService;
 
     /**
      * Получение всех пользователей
@@ -77,7 +78,7 @@ public class UserServiceImpl implements UserService {
         if (!userRepository.existsById(userId)) {
             throw new NotFoundException("User with id=" + userId + " was not found");
         }
-
+        commentService.deleteUserComments(userId);
         userRepository.deleteById(userId);
         log.debug("User id={} deleted", userId);
     }

@@ -19,4 +19,5 @@ public class EventShortDto {
     private Boolean paid;                  // Флаг платности события
     private String title;                  // Заголовок события
     private Long views;                    // Количество просмотров
+    private Long commentsCount;            // Количество комментариев
 }
