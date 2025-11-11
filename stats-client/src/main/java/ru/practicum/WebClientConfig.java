@@ -31,12 +31,12 @@ public class WebClientConfig {
                 .build();
     }
 
-    /**
-     * Создает и настраивает клиент для работы с сервисом статистики.
-     */
-    @Bean
-    public StatsClient statsClient(WebClient webClient) {
-        log.debug("Инициализация StatsClient с URL: {}", statsServiceUrl);
-        return new StatsClient(webClient);
-    }
+//    /**
+//     * Создает и настраивает клиент для работы с сервисом статистики.
+//     */
+//    @Bean
+//    public StatsClient statsClient(WebClient webClient) {
+//        log.debug("Инициализация StatsClient с URL: {}", statsServiceUrl);
+//        return new StatsClient(webClient);
+//    }
 }

@@ -151,7 +151,6 @@ class StatsClientTest {
         when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
         when(responseSpec.onStatus(any(), any())).thenReturn(responseSpec);
 
-        // Используем any(ParameterizedTypeReference.class) вместо any(Class.class)
         when(responseSpec.bodyToMono(any(ParameterizedTypeReference.class)))
                 .thenReturn(Mono.just(expectedStats));
 
@@ -165,23 +164,34 @@ class StatsClientTest {
 
     @Test
     void getStats_WhenServerError_ShouldReturnEmptyList() {
-
+        // Given
         when(webClient.get()).thenReturn(requestHeadersUriSpec);
         when(requestHeadersUriSpec.uri(any(Function.class))).thenReturn(requestHeadersSpec);
         when(requestHeadersSpec.accept(any())).thenReturn(requestHeadersSpec);
         when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
+
         when(responseSpec.onStatus(any(), any())).thenAnswer(invocation -> {
-            var predicate = invocation.getArgument(0);
-            var function = invocation.getArgument(1);
-            if (predicate.test(HttpStatus.INTERNAL_SERVER_ERROR)) {
-                function.apply(ClientResponse.create(HttpStatus.INTERNAL_SERVER_ERROR).build());
+            java.util.function.Predicate<org.springframework.http.HttpStatusCode> predicate = invocation.getArgument(0);
+            java.util.function.Function<org.springframework.web.reactive.function.client.ClientResponse,
+                    reactor.core.publisher.Mono<? extends Throwable>> function = invocation.getArgument(1);
+
+            org.springframework.web.reactive.function.client.ClientResponse clientResponse =
+                    org.springframework.web.reactive.function.client.ClientResponse.create(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR)
+                            .build();
+
+            if (predicate.test(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR)) {
+                function.apply(clientResponse);
             }
             return responseSpec;
         });
-        when(responseSpec.bodyToMono(any(Class.class))).thenReturn(Mono.error(new RuntimeException("Server error")));
 
+        when(responseSpec.bodyToMono(any(ParameterizedTypeReference.class)))
+                .thenReturn(Mono.error(new RuntimeException("Server error after onStatus")));
+
+        // When
         List<ViewStats> result = statsClient.getStats(startTime, endTime, null, false);
 
+        // Then
         assertNotNull(result);
         assertTrue(result.isEmpty());
     }
@@ -191,7 +201,7 @@ class StatsClientTest {
         List<ViewStats> expectedStats = List.of();
 
         when(webClient.get()).thenReturn(requestHeadersUriSpec);
-        when(requestHeadersUriSpec.uri(any())).thenReturn(requestHeadersSpec);
+        when(requestHeadersUriSpec.uri(any(Function.class))).thenReturn(requestHeadersSpec);
         when(requestHeadersSpec.accept(any())).thenReturn(requestHeadersSpec);
         when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
         when(responseSpec.onStatus(any(), any())).thenReturn(responseSpec);
@@ -200,7 +210,7 @@ class StatsClientTest {
         List<ViewStats> result = statsClient.getStats(startTime, endTime, null, null);
 
         assertNotNull(result);
-        verify(requestHeadersUriSpec).uri(any());
+        verify(requestHeadersUriSpec).uri(any(Function.class));
     }
 
     @Test
