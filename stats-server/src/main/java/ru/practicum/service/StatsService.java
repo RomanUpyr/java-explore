@@ -1,6 +1,7 @@
 package ru.practicum.service;
 
 import org.springframework.transaction.annotation.Transactional;
+import ru.practicum.exception.BadRequestException;
 import ru.practicum.model.EndpointHit;
 import ru.practicum.ViewStats;
 import ru.practicum.repository.StatsRepository;
@@ -39,6 +40,10 @@ public class StatsService {
                                     List<String> uris, Boolean unique) {
         log.debug("Запрос статистики: период с {} по {}, URIs: {}, уникальные: {}",
                 start, end, uris, unique);
+
+        if (start.isAfter(end)) {
+            throw new BadRequestException("Начальная дата не может быть позже конечной");
+        }
 
         List<ViewStats> stats;
         if (Boolean.TRUE.equals(unique)) {
