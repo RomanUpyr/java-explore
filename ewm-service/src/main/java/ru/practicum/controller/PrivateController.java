@@ -6,6 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.dto.*;
 import ru.practicum.exception.BadRequestException;
+import ru.practicum.service.CommentService;
 import ru.practicum.service.EventService;
 import ru.practicum.service.RequestService;
 
@@ -23,6 +24,7 @@ import java.util.List;
 public class PrivateController {
     private final EventService eventService;
     private final RequestService requestService;
+    private final CommentService commentService;
 
     /**
      * Получение событий, созданных конкретным пользователем
@@ -151,5 +153,38 @@ public class PrivateController {
                                                               @PathVariable Long eventId,
                                                               @RequestBody EventRequestStatusUpdateRequest updateRequest) {
         return requestService.updateRequestStatus(userId, eventId, updateRequest);
+    }
+
+    /**
+     * Создание комментария к событию
+     */
+    @PostMapping("/{userId}/comments")
+    @ResponseStatus(HttpStatus.CREATED)
+    public CommentDto createComment(@PathVariable Long userId,
+                                    @Valid @RequestBody NewCommentDto newCommentDto) {
+        log.debug("Пользователь ID: {} создает комментарий к событию ID: {}", userId, newCommentDto.getEventId());
+        return commentService.createComment(userId, newCommentDto);
+    }
+
+    /**
+     * Обновление комментария пользователем
+     */
+    @PatchMapping("/{userId}/comments/{commentId}")
+    public CommentDto updateCommentByUser(@PathVariable Long userId,
+                                          @PathVariable Long commentId,
+                                          @Valid @RequestBody UpdateCommentDto updateCommentDto) {
+        log.debug("Пользователь ID: {} обновляет комментарий ID: {}", userId, commentId);
+        return commentService.updateCommentByUser(userId, commentId, updateCommentDto);
+    }
+
+    /**
+     * Удаление комментария пользователем
+     */
+    @DeleteMapping("/{userId}/comments/{commentId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteCommentByUser(@PathVariable Long userId,
+                                    @PathVariable Long commentId) {
+        log.debug("Пользователь ID: {} удаляет комментарий ID: {}", userId, commentId);
+        commentService.deleteCommentByUser(userId, commentId);
     }
 }

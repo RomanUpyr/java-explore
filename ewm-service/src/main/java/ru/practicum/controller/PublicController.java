@@ -1,9 +1,12 @@
 package ru.practicum.controller;
 
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.dto.*;
 import ru.practicum.service.CategoryService;
+import ru.practicum.service.CommentService;
 import ru.practicum.service.CompilationService;
 import ru.practicum.service.EventService;
 
@@ -22,6 +25,7 @@ public class PublicController {
     private final EventService eventService;
     private final CategoryService categoryService;
     private final CompilationService compilationService;
+    private final CommentService commentService;
 
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
@@ -118,5 +122,15 @@ public class PublicController {
     @GetMapping("/compilations/{compilationId}")
     public CompilationDto getCompilation(@PathVariable Long compilationId) {
         return compilationService.getCompilation(compilationId);
+    }
+
+    /**
+     * Получение комментариев для события
+     */
+    @GetMapping("/events/{eventId}/comments")
+    public List<CommentDto> getCommentsForEvent(@PathVariable Long eventId,
+                                                @RequestParam(defaultValue = "0") @PositiveOrZero Integer from,
+                                                @RequestParam(defaultValue = "10") @Positive Integer size) {
+        return commentService.getCommentsForEvent(eventId, from, size);
     }
 }

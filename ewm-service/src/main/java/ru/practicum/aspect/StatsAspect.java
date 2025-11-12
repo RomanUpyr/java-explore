@@ -56,7 +56,7 @@ public class StatsAspect {
         return uri.startsWith("/events/") && !uri.equals("/events");
     }
 
-    private Long extractEventIdFromUri(String uri) {
+    Long extractEventIdFromUri(String uri) {
         try {
             String[] parts = uri.split("/");
             for (int i = 0; i < parts.length; i++) {
