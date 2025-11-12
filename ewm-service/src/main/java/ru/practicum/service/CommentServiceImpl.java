@@ -53,7 +53,7 @@ public class CommentServiceImpl implements CommentService {
                 .build();
 
         Comment savedComment = commentRepository.save(comment);
-        log.info("Создан новый комментарий ID: {} пользователем ID: {} к событию ID: {}",
+        log.debug("Создан новый комментарий ID: {} пользователем ID: {} к событию ID: {}",
                 savedComment.getId(), userId, event.getId());
 
         return toCommentDto(savedComment);
@@ -62,7 +62,10 @@ public class CommentServiceImpl implements CommentService {
     @Override
     @Transactional
     public CommentDto updateCommentByUser(Long userId, Long commentId, UpdateCommentDto updateCommentDto) {
-        getUserById(userId);
+
+        if (!userRepository.existsById(userId)) {
+            throw new NotFoundException("Пользователь с ID=" + userId + " не найден");
+        }
         Comment comment = getCommentById(commentId);
 
         if (!comment.getAuthor().getId().equals(userId)) {
@@ -81,7 +84,7 @@ public class CommentServiceImpl implements CommentService {
         comment.setStatus(CommentStatus.PENDING);
 
         Comment updatedComment = commentRepository.save(comment);
-        log.info("Обновлен комментарий ID: {} пользователем ID: {}", commentId, userId);
+        log.debug("Обновлен комментарий ID: {} пользователем ID: {}", commentId, userId);
 
         return toCommentDto(updatedComment);
     }
@@ -89,7 +92,11 @@ public class CommentServiceImpl implements CommentService {
     @Override
     @Transactional
     public void deleteCommentByUser(Long userId, Long commentId) {
-        getUserById(userId);
+
+        if (!userRepository.existsById(userId)) {
+            throw new NotFoundException("Пользователь с ID=" + userId + " не найден");
+        }
+
         Comment comment = getCommentById(commentId);
 
         if (!comment.getAuthor().getId().equals(userId)) {
@@ -97,19 +104,23 @@ public class CommentServiceImpl implements CommentService {
         }
 
         commentRepository.delete(comment);
-        log.info("Удален комментарий ID: {} пользователем ID: {}", commentId, userId);
+        log.debug("Удален комментарий ID: {} пользователем ID: {}", commentId, userId);
     }
 
     @Override
     public List<CommentDto> getCommentsForEvent(Long eventId, Integer from, Integer size) {
-        getEventById(eventId);
+
+        if (!eventRepository.existsById(eventId)) {
+            throw new NotFoundException("Событие с ID=" + eventId + " не найдено");
+        }
+
         Pageable pageable = PageRequest.of(from / size, size);
 
         List<Comment> comments = commentRepository
                 .findByEventIdAndStatus(eventId, CommentStatus.PUBLISHED, pageable)
                 .getContent();
 
-        log.info("Получено {} опубликованных комментариев для события ID: {}", comments.size(), eventId);
+        log.debug("Получено {} опубликованных комментариев для события ID: {}", comments.size(), eventId);
         return comments.stream()
                 .map(this::toCommentDto)
                 .collect(Collectors.toList());
@@ -123,7 +134,7 @@ public class CommentServiceImpl implements CommentService {
                 .findByStatus(CommentStatus.PENDING, pageable)
                 .getContent();
 
-        log.info("Получено {} комментариев для модерации", comments.size());
+        log.debug("Получено {} комментариев для модерации", comments.size());
         return comments.stream()
                 .map(this::toCommentDto)
                 .collect(Collectors.toList());
@@ -140,7 +151,7 @@ public class CommentServiceImpl implements CommentService {
         }
 
         Comment moderatedComment = commentRepository.save(comment);
-        log.info("Комментарий ID: {} промодерирован со статусом: {}", commentId, adminUpdateDto.getStatus());
+        log.debug("Комментарий ID: {} промодерирован со статусом: {}", commentId, adminUpdateDto.getStatus());
 
         return toCommentDto(moderatedComment);
     }
@@ -153,13 +164,13 @@ public class CommentServiceImpl implements CommentService {
     @Transactional
     public void deleteUserComments(Long userId) {
         commentRepository.deleteByAuthorId(userId);
-        log.info("Удалены все комментарии пользователя ID: {}", userId);
+        log.debug("Удалены все комментарии пользователя ID: {}", userId);
     }
 
     @Transactional
     public void deleteEventComments(Long eventId) {
         commentRepository.deleteByEventId(eventId);
-        log.info("Удалены все комментарии события ID: {}", eventId);
+        log.debug("Удалены все комментарии события ID: {}", eventId);
     }
 
     private Comment getCommentById(Long commentId) {
