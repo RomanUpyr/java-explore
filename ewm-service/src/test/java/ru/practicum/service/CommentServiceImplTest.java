@@ -127,7 +127,7 @@ class CommentServiceImplTest {
                 .text("Updated comment")
                 .build();
 
-        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(userRepository.existsById(userId)).thenReturn(true);
         when(commentRepository.findById(commentId)).thenReturn(Optional.of(comment));
         when(commentRepository.save(any(Comment.class))).thenReturn(comment);
 
@@ -148,7 +148,7 @@ class CommentServiceImplTest {
         Event event = createTestEvent(eventId, EventState.PUBLISHED);
         Comment comment = createTestComment(1L, user, event, CommentStatus.PUBLISHED);
 
-        when(eventRepository.findById(eventId)).thenReturn(Optional.of(event));
+        when(eventRepository.existsById(eventId)).thenReturn(true);
         when(commentRepository.findByEventIdAndStatus(eq(eventId), eq(CommentStatus.PUBLISHED), any(PageRequest.class)))
                 .thenReturn(new PageImpl<>(List.of(comment)));
 
